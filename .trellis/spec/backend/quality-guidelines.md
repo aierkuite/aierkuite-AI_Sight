@@ -61,6 +61,8 @@ Keep tests light but cover the two things most likely to break a demo:
 
 - **Config validation** (`tests/test_config.py`): clearing a required var makes
   `get_settings()` / startup validation fail. Missing config must not boot.
+  **Isolate the test from any local `.env`** — clearing the process env var is
+  not enough on its own (see the gotcha below).
 - **`/api/chat` contract** (`tests/test_chat.py`): with `AsyncOpenAI` mocked to
   yield fake deltas, assert the SSE stream emits `data:{"delta":...}` frames then
   `event: done`; assert a raised `openai.AuthenticationError` produces an
@@ -69,6 +71,36 @@ Keep tests light but cover the two things most likely to break a demo:
 
 Use `pytest` + FastAPI's `TestClient`/`httpx`. Mock the OpenAI client — tests
 never make real network calls.
+
+### Gotcha: config tests must disable `.env`, not just clear the env var
+
+**Symptom**: `test_validate_config_fails_fast_without_required_env` passes in CI
+(and for reviewers with no `.env`) but fails locally with
+`Failed: DID NOT RAISE <class 'SystemExit'>` for anyone who has a real
+`backend/.env`.
+
+**Cause**: `Settings` sets `model_config = SettingsConfigDict(env_file=".env")`.
+`pydantic-settings` re-reads `.env` on every instantiation, so
+`monkeypatch.delenv("OPENAI_BASE_URL")` is silently undone — the value is
+re-loaded from the file, validation "succeeds", and fail-fast never triggers.
+
+**Fix / Prevention**: neutralize `.env` for the whole test package with an
+autouse fixture in `tests/conftest.py`, so tests depend only on the process
+environment they set explicitly:
+
+```python
+# backend/tests/conftest.py
+import pytest
+from app.config import Settings
+
+@pytest.fixture(autouse=True)
+def isolate_dotenv(monkeypatch: pytest.MonkeyPatch) -> None:
+    """阻止测试读取开发者本地 .env，保证配置校验测试可重现"""
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
+```
+
+Tests that need config *present* then `monkeypatch.setenv(...)` the required
+vars themselves (process env is the only source once `.env` is off).
 
 ---
 
