@@ -1,0 +1,28 @@
+.talk,
+.talkActive {
+  min-height: 56px;
+  border: 0;
+  border-radius: var(--radius-3);
+  padding: 0 var(--space-5);
+  color: var(--color-on-accent);
+  background: var(--color-action);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.talk:hover:not(:disabled) {
+  background: var(--color-action-strong);
+}
+
+.talkActive {
+  background: var(--color-danger);
+}
+
+.talk:disabled,
+.talkActive:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
