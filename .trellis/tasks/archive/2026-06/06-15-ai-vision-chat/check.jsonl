@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端验收基线：ruff、类型注解、async 正确性、pytest 要求、禁止/必需模式、Review 清单"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端验收基线：ESLint/Prettier/Vitest、禁止/必需模式、Review 清单"}
+{"file": ".trellis/spec/backend/llm-streaming.md", "reason": "核对 /api/chat SSE 线协议与成本控制实现是否符合契约"}
+{"file": ".trellis/spec/backend/configuration.md", "reason": "核对 fail-fast、get_settings() 唯一入口、API Key 保密"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "核对流内 event:error vs 4xx、异常→中文映射、不泄漏内部信息"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "核对日志未记录密钥/图片字节/对话内容"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "核对无越界 any、types/chat.ts 与后端 schema 对齐、防御式 SSE 解析"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "核对每个设备/API hook 卸载清理、fetch 而非 EventSource、AbortError 处理"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "核对零持久化、6 轮裁剪单点"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "核对 SSE 契约前后端同步、边界数据格式一致"}

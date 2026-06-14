@@ -1,0 +1,14 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "后端总入口：架构图、非协商项、各 guideline 索引"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "layered-lite 模块布局与各层职责，决定 app/ 结构与命名"}
+{"file": ".trellis/spec/backend/configuration.md", "reason": "pydantic-settings、必填 env、fail-fast 启动校验、API Key 保密"}
+{"file": ".trellis/spec/backend/llm-streaming.md", "reason": "核心：AsyncOpenAI 多模态消息构建 + /api/chat SSE 线协议（前后端契约）+ 成本控制"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "启动 fail-fast vs 流内 event:error；OpenAI 异常→中文消息映射"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "stdlib logging 级别；绝不记录密钥/图片字节/对话内容"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端总入口：数据流图、非协商项、各 guideline 索引"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "src/ 单屏布局：components/hooks/effects/lib/types/styles 及职责"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "函数组件 + 类型化 props + CSS Modules + aria 可访问性"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "四个浏览器 API hook 的封装、特性检测、卸载清理；fetch 流式读 SSE"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "纯内存状态、6 轮历史裁剪单点、零持久化"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "strict TS、ChatEvent discriminated union、Web Speech any 隔离、与 schemas.py 对齐"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "/api/chat SSE 契约是跨层边界，两侧需同步"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "改常量/建工具前先搜索，避免重复（如 MAX_HISTORY_ROUNDS 单点）"}
