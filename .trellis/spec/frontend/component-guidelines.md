@@ -64,6 +64,13 @@ defined once in `styles/tokens.css`:
 - Decorative dynamic visuals (particles, animated backgrounds) are **not** done
   ad hoc here — they belong in the isolated `effects/` layer
   (see [directory-structure.md](./directory-structure.md)).
+- Colors in module CSS go through tokens only — `var(--color-*)` or, for derived
+  tints/glows, `color-mix(in srgb, var(--color-*) N%, transparent)`. The
+  `transparent` keyword is fine; raw hex/rgb is not. A genuinely new color is
+  added to `tokens.css` first, then referenced — never inlined in a `*.module.css`.
+- Every animation degrades under `prefers-reduced-motion: reduce`: `global.css`
+  carries a global block that neutralizes CSS animation/transition durations, and
+  canvas effects branch on `matchMedia` (see [directory-structure.md](./directory-structure.md)).
 
 ---
 
@@ -91,3 +98,10 @@ The UX is voice + streaming text, so live regions and labels matter:
   prettier" to the chat flow.
 - Using `any` for an event or props to dodge a type error — narrow it instead
   (see [type-safety.md](./type-safety.md)).
+- Putting a button's outer glow on `::before`/`::after` while the button uses
+  `overflow: hidden` for a shimmer sweep → the glow gets clipped. Paint the glow
+  with `box-shadow` (rendered outside the border box, unaffected by `overflow`)
+  and reserve the pseudo-element for the clipped shimmer.
+- Leaving `:hover` effects unguarded → on touch devices `:hover` sticks after a
+  tap (a push-to-talk button keeps glowing). Wrap hover rules in
+  `@media (hover: hover) and (pointer: fine)`.

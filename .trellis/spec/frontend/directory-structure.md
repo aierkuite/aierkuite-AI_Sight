@@ -73,11 +73,43 @@ app logic**:
 
 - An effect renders into its own layer (e.g. a fixed background canvas) and reads
   only from props/CSS variables, never from chat state.
-- Heavy/animated effects (particles) should use a dedicated library mounted as
-  one isolated component (e.g. `effects/ParticleBackground.tsx`), so the
-  functional UI and the visual layer evolve independently.
+- A heavier/animated effect (particles, glow fields) is either a hand-written
+  self-contained `<canvas>` component or a dedicated library mounted as one
+  isolated component (e.g. `effects/LiveBackdrop.tsx`), so the functional UI and
+  the visual layer evolve independently.
 - This keeps "make it fancier later" a localized change, not a refactor of the
   chat flow.
+
+### Canvas effect contract (`effects/LiveBackdrop.tsx`)
+
+`LiveBackdrop` is the reference hand-written canvas effect; a new animated canvas
+in this layer MUST follow the same contract:
+
+- Render one `aria-hidden` `<canvas>`; keep all logic in a single `useEffect`.
+- **Fully typed, no `any`** — explicit interfaces for particles/entities and a
+  `getContext("2d")` null-guard (see [type-safety.md](./type-safety.md)).
+- **Colors come from CSS tokens, not literals**: `getComputedStyle(canvas)
+  .getPropertyValue("--color-accent")` → parse → build `rgba()`. The effect reads
+  only CSS variables — never chat state or device APIs — so re-theming
+  `tokens.css` re-colors the canvas for free.
+- **Cap DPR**: `const dpr = Math.min(window.devicePixelRatio || 1, 2)` then
+  `ctx.setTransform(dpr, 0, 0, dpr, 0, 0)` — uncapped DPR tanks perf on hi-dpi.
+- **Delta-time motion**: advance by `vx * dt` from the rAF timestamp (clamp `dt`,
+  e.g. `Math.min((t - last) / 1000, 0.05)`), not a fixed per-frame increment —
+  keeps drift speed identical at 60/120/144 Hz.
+- **`prefers-reduced-motion`**: `window.matchMedia("(prefers-reduced-motion:
+  reduce)")` → draw exactly one static frame and start no rAF loop; also subscribe
+  to its `change` event.
+- **Cleanup is mandatory**: the `useEffect` return calls `cancelAnimationFrame`
+  and removes the `resize` + `matchMedia` listeners (mirrors the device-hook
+  cleanup rule).
+
+> **Design decision — hand-written canvas over a particle library.** For
+> `LiveBackdrop` we deliberately hand-wrote a typed `<canvas>` (additive-blended
+> glows + drifting particles + vignette) instead of adding a WebGL/particle
+> library: zero new dependency, full control, and it satisfies this layer's real
+> intent (self-contained, reads only props/CSS, decoupled from chat). Reach for a
+> library only if an effect outgrows a few hundred 2D primitives.
 
 ---
 
