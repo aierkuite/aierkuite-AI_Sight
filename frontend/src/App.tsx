@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 
 import { AnswerView } from "./components/AnswerView/AnswerView";
+import { AppHeader } from "./components/AppHeader/AppHeader";
 import { CameraPreview } from "./components/CameraPreview/CameraPreview";
 import { ConversationList } from "./components/ConversationList/ConversationList";
 import { ErrorBanner } from "./components/ErrorBanner/ErrorBanner";
@@ -144,6 +145,7 @@ export function App() {
   return (
     <main className={styles.shell}>
       <LiveBackdrop />
+      <AppHeader />
       <section className={styles.workspace} aria-label="AI 视觉对话助手">
         <div className={styles.leftPane}>
           <CameraPreview

@@ -4,6 +4,10 @@
   border-radius: var(--radius-3);
   padding: var(--space-4);
   background: var(--color-surface);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-panel);
+  animation: rise var(--dur-3) var(--ease-smooth) 40ms both;
 }
 
 .header {
@@ -16,15 +20,32 @@
 
 .header h2 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.header h2::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--gradient-accent);
+  vertical-align: middle;
 }
 
 .badgeLive,
 .badgeIdle {
   flex: 0 0 auto;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.25rem 0.6rem;
-  font-size: 0.82rem;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
@@ -43,4 +64,22 @@
   color: var(--color-text);
   white-space: pre-wrap;
   line-height: 1.75;
+}
+
+/* 流式中：文本轻微辉光 + 末尾打字光标（柔和脉冲，传达"正在生成"） */
+.streaming {
+  text-shadow: 0 0 18px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+.streaming::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-glow);
+  vertical-align: -0.15em;
+  animation: blink 1.1s var(--ease-out) infinite;
 }

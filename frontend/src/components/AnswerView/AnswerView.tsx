@@ -20,7 +20,11 @@ export function AnswerView({ answer, streaming, speaking }: AnswerViewProps) {
         <h2 id="answer-title">AI 回答</h2>
         <span className={streaming ? styles.badgeLive : styles.badgeIdle}>{statusText}</span>
       </div>
-      <div className={styles.answer} aria-live="polite" aria-busy={streaming}>
+      <div
+        className={streaming ? `${styles.answer} ${styles.streaming}` : styles.answer}
+        aria-live="polite"
+        aria-busy={streaming}
+      >
         {answer || "回答会在这里逐字显示，并在形成句子后开始播报"}
       </div>
     </section>

@@ -2,9 +2,13 @@
   position: relative;
   overflow: hidden;
   min-height: 280px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-3);
   background: var(--color-video-bg);
+  box-shadow:
+    var(--shadow-panel),
+    0 0 40px -28px var(--color-glow);
+  animation: rise var(--dur-3) var(--ease-smooth) both;
 }
 
 .video {
@@ -25,10 +29,12 @@
   gap: var(--space-2);
   max-width: calc(100% - var(--space-6));
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-2);
+  border-radius: var(--radius-pill);
   padding: var(--space-2) var(--space-3);
   color: var(--color-text);
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   font-size: 0.9rem;
 }
 
@@ -37,11 +43,12 @@
   width: 10px;
   height: 10px;
   flex: 0 0 auto;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .dotReady {
   background: var(--color-success);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 70%, transparent);
 }
 
 .dotIdle {

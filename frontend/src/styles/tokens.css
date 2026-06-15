@@ -1,25 +1,64 @@
 :root {
-  --color-bg: #f6f7f3;
-  --color-surface: #ffffff;
-  --color-subtle: #f1f5ef;
-  --color-input: #fbfcf8;
-  --color-video-bg: #19211d;
-  --color-text: #17201a;
-  --color-muted: #5b685f;
-  --color-muted-surface: #e7ece5;
-  --color-border: #d5ddd2;
-  --color-accent: #0f766e;
-  --color-accent-strong: #0b5f59;
-  --color-action: #2563eb;
-  --color-action-strong: #1d4ed8;
-  --color-on-accent: #ffffff;
-  --color-danger: #b42318;
-  --color-on-danger: #ffffff;
-  --color-danger-text: #8a1c13;
-  --color-danger-surface: #fff1ef;
-  --color-warning: #b56a00;
-  --color-success: #16803c;
-  --color-focus: #9cc7ff;
+  color-scheme: dark;
+
+  /* 底/面 */
+  --color-bg: #000209;
+  --color-surface: rgba(10, 15, 26, 0.66); /* 玻璃面板，让背景粒子透出 */
+  --color-subtle: rgba(155, 184, 225, 0.06); /* 对话项底 */
+  --color-input: rgba(0, 2, 9, 0.55); /* 输入框底 */
+  --color-video-bg: #04070e; /* 摄像头 letterbox */
+
+  /* 文本 */
+  --color-text: #eaeef5; /* 主文本 */
+  --color-muted: #b7c6d4; /* 次要/正文灰蓝 */
+  --color-dim: #6f8093; /* 仅装饰微标签/计数，勿用于正文 */
+  --color-muted-surface: rgba(155, 184, 225, 0.12);
+
+  /* 边框/分隔 */
+  --color-border: rgba(155, 184, 225, 0.14); /* 发丝边框 */
+  --color-border-strong: rgba(155, 184, 225, 0.34); /* 按钮/强调边框 */
+
+  /* 强调（periwinkle 蓝紫） */
+  --color-accent: #9bb8e1;
+  --color-accent-strong: #b8cdee;
+  --color-accent-deep: #2c4e73;
+  --color-on-accent: #05101f; /* 实心 periwinkle 上的深色文字 */
+  --color-action: #9bb8e1; /* 兼容旧名，指向 accent */
+  --color-action-strong: #b8cdee;
+
+  /* 语义（深色适配） */
+  --color-danger: #ff6b5e;
+  --color-on-danger: #1a0604;
+  --color-danger-text: #ffc4bd;
+  --color-danger-surface: rgba(255, 70, 60, 0.1);
+  --color-warning: #e8c069;
+  --color-success: #5fd6a0;
+  --color-focus: #bcd6ff;
+
+  /* 字体 */
+  --font-display: "Clash Display", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  --font-ui: "Space Grotesk", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+
+  /* 渐变 / 辉光 */
+  --gradient-accent: linear-gradient(180deg, #9bb8e1, #2c4e73);
+  --gradient-line: linear-gradient(
+    90deg,
+    rgba(155, 184, 225, 0) 0%,
+    #9bb8e1 35%,
+    #2c4e73 70%,
+    rgba(44, 78, 115, 0) 100%
+  );
+  --gradient-shimmer: linear-gradient(
+    115deg,
+    rgba(155, 184, 225, 0) 0%,
+    rgba(184, 205, 238, 0.45) 50%,
+    rgba(155, 184, 225, 0) 100%
+  ); /* 按钮扫光高亮 */
+  --color-glow: rgba(155, 184, 225, 0.55);
+  --color-glow-0: rgba(155, 184, 225, 0); /* 脉冲辉光的零透明收尾，避免淡出时发黑 */
+  --shadow-panel: 0 1px 0 rgba(155, 184, 225, 0.06) inset, 0 24px 60px -34px rgba(0, 0, 0, 0.85);
+
+  /* 间距/圆角 */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -29,4 +68,12 @@
   --radius-1: 4px;
   --radius-2: 6px;
   --radius-3: 8px;
+  --radius-pill: 999px;
+
+  /* 动效 */
+  --ease-smooth: cubic-bezier(0.14, 1, 0.34, 1);
+  --ease-out: cubic-bezier(0.9, 0, 0.1, 1);
+  --dur-1: 0.2s;
+  --dur-2: 0.6s;
+  --dur-3: 0.8s;
 }

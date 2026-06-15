@@ -5,18 +5,15 @@
 html {
   min-width: 320px;
   background: var(--color-bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
 }
 
 body {
   margin: 0;
   color: var(--color-text);
   background: var(--color-bg);
-  font-family:
-    Inter,
-    "Microsoft YaHei",
-    "PingFang SC",
-    system-ui,
-    sans-serif;
+  font-family: var(--font-ui);
 }
 
 button,
@@ -28,4 +25,82 @@ button:focus-visible,
 textarea:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/* 细样式滚动条（可见，不隐藏） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 全局动效关键帧（在任意组件/effects 层复用） */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-160%) skewX(-18deg);
+  }
+
+  to {
+    transform: translateX(160%) skewX(-18deg);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.32;
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-glow);
+  }
+
+  70% {
+    box-shadow: 0 0 0 14px var(--color-glow-0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 var(--color-glow-0);
+  }
+}
+
+/* 尊重系统「减少动态效果」：统一降级所有动画/过渡 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

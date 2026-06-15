@@ -1,28 +1,67 @@
 .talk,
 .talkActive {
+  position: relative;
+  overflow: hidden;
   min-height: 56px;
   border: 0;
   border-radius: var(--radius-3);
   padding: 0 var(--space-5);
   color: var(--color-on-accent);
-  background: var(--color-action);
-  font: inherit;
+  background: var(--color-accent);
+  font-family: var(--font-ui);
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
   touch-action: none;
+  transition:
+    background var(--dur-1) var(--ease-smooth),
+    box-shadow var(--dur-1) var(--ease-smooth);
 }
 
-.talk:hover:not(:disabled) {
-  background: var(--color-action-strong);
-}
-
+/* 聆听态：保持 accent 蓝紫（不变红），叠加周期扩散的脉冲辉光环。
+   辉光走按钮自身 box-shadow（动画驱动），不受自身 overflow:hidden 影响。 */
 .talkActive {
-  background: var(--color-danger);
+  background: var(--color-accent-strong);
+  animation: pulse-glow 1.6s var(--ease-out) infinite;
 }
 
 .talk:disabled,
 .talkActive:disabled {
   cursor: not-allowed;
-  opacity: 0.58;
+  opacity: 0.5;
+  box-shadow: none;
+  animation: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .talk:hover:not(:disabled) {
+    background: var(--color-accent-strong);
+    box-shadow: 0 0 28px -2px var(--color-glow);
+  }
+
+  .talk:not(:disabled)::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: var(--gradient-shimmer);
+    transform: translateX(-160%) skewX(-18deg);
+    pointer-events: none;
+  }
+
+  .talk:hover:not(:disabled)::after {
+    animation: shimmer var(--dur-2) var(--ease-out);
+  }
+}
+
+/* 减少动态效果：停用脉冲，改为静态强辉光，聆听态依旧清晰可辨 */
+@media (prefers-reduced-motion: reduce) {
+  .talkActive {
+    animation: none;
+    box-shadow: 0 0 30px -2px var(--color-glow);
+  }
 }

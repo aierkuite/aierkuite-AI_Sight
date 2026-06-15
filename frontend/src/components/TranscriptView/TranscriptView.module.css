@@ -3,6 +3,10 @@
   border-radius: var(--radius-3);
   padding: var(--space-4);
   background: var(--color-surface);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-panel);
+  animation: rise var(--dur-3) var(--ease-smooth) 80ms both;
 }
 
 .header {
@@ -15,21 +19,39 @@
 
 .header h2 {
   margin: 0;
+  font-family: var(--font-display);
   font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.header h2::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--gradient-accent);
+  vertical-align: middle;
 }
 
 .badgeLive,
 .badgeIdle {
   flex: 0 0 auto;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.25rem 0.6rem;
-  font-size: 0.82rem;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
+/* 识别中：由原 danger 红改为 accent 蓝紫，与 TalkButton 聆听态同源 */
 .badgeLive {
-  color: var(--color-on-danger);
-  background: var(--color-danger);
+  color: var(--color-on-accent);
+  background: var(--color-accent);
 }
 
 .badgeIdle {
@@ -45,7 +67,7 @@
   padding: var(--space-3);
   color: var(--color-text);
   background: var(--color-input);
-  font: inherit;
+  font-family: var(--font-ui);
   line-height: 1.6;
 }
 
