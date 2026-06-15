@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 1
+- **Total Sessions**: 2
 - **Last Active**: 2026-06-15
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~42 | Active |
+| `journal-1.md` | ~77 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 2 | 2026-06-15 | 前端深色改造（参照 hashgraphvc 设计语言） | `96dece0`, `69e6376`, `864a1f4` | `main` |
 | 1 | 2026-06-15 | Phase 3 finish: AI vision-chat MVP — gates, spec, commits | `2273c8b`, `b381887`, `ede9096` | `main` |
 <!-- @@@/auto:session-history -->
 
