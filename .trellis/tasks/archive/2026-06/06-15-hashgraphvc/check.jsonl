@@ -1,0 +1,4 @@
+{"file": "frontend-redesign-plan.md", "reason": "Verification 清单：lint/build/test 必过 + dev 视觉自查 + reduced-motion 降级 + 窄屏(<860px) + a11y 抽查（aria/role/id 与中文文案保留）"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Code Review Checklist：无 any、令牌而非硬编码颜色、effects 隔离、aria-live/labeled、无持久化、不破坏测试"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "核对 Canvas/AppHeader 等新代码无 any、无 as 强转、无 ! 抑制"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核对 a11y 契约与 CSS Modules+tokens 未被破坏、effects 未读取 chat/设备状态"}
