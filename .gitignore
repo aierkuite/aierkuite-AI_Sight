@@ -32,3 +32,7 @@ Thumbs.db
 
 # Local agent/tool overrides
 .claude/settings.local.json
+
+# Local design scratch / advisory notes (not committed)
+/frontend-redesign-plan.md
+/gemini-fronted-advise.md
