@@ -7,6 +7,13 @@
   min-height: 100vh;
   padding: var(--space-6);
   color: var(--color-text);
+  transition: opacity var(--dur-cinematic) var(--ease-cinematic);
+}
+
+/* 开场阶段：工作台保持挂载（摄像头/语音 hook 绑定不变），仅隐藏；inert 经 ref 关闭焦点/无障碍树 */
+.shellHidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .workspace {

@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnswerView } from "./components/AnswerView/AnswerView";
 import { AppHeader } from "./components/AppHeader/AppHeader";
@@ -7,14 +7,19 @@ import { ConversationList } from "./components/ConversationList/ConversationList
 import { ErrorBanner } from "./components/ErrorBanner/ErrorBanner";
 import { TalkButton } from "./components/TalkButton/TalkButton";
 import { TranscriptView } from "./components/TranscriptView/TranscriptView";
+import { CinematicLanding } from "./cinematic/CinematicLanding";
 import { LiveBackdrop } from "./effects/LiveBackdrop";
 import { appendRound, trimHistory } from "./lib/constants";
+import { useCinematicStore } from "./store/cinematic";
 import type { HistoryTurn } from "./types/chat";
 import { useCamera } from "./hooks/useCamera";
 import { useChatStream } from "./hooks/useChatStream";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
 import { useSpeechSynthesis } from "./hooks/useSpeechSynthesis";
 import styles from "./App.module.css";
+
+/** 懒加载 3D 电影场景：three 栈较大，仅在 WebGL 可用时按需加载（plan §10） */
+const Scene = lazy(() => import("./cinematic/Scene"));
 
 /**
  * 作用：过滤并去重错误提示
@@ -23,6 +28,25 @@ import styles from "./App.module.css";
  */
 function uniqueMessages(messages: Array<string | null | false>): string[] {
   return Array.from(new Set(messages.filter((message): message is string => Boolean(message))));
+}
+
+/**
+ * 作用：探测是否启用 3D 场景——需 WebGL 可用且系统未开启「减少动态效果」
+ * 参数：无
+ * 返回：true 则常驻 <Scene/>，否则回退 2D <LiveBackdrop/>
+ */
+function detectSceneEnabled(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return false;
+  }
+  try {
+    return document.createElement("canvas").getContext("webgl") !== null;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -39,11 +63,21 @@ export function App() {
   const [draftText, setDraftText] = useState("");
   const [appError, setAppError] = useState<string | null>(null);
 
+  const stage = useCinematicStore((state) => state.stage);
+  const setStage = useCinematicStore((state) => state.setStage);
+  const [sceneEnabled] = useState(detectSceneEnabled);
+  const shellRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     if (speech.transcript) {
       setDraftText(speech.transcript);
     }
   }, [speech.transcript]);
+
+  // 开场阶段把工作台标记为 inert：保持挂载（摄像头/语音 hook 绑定不变），但移出焦点与无障碍树
+  useEffect(() => {
+    shellRef.current?.toggleAttribute("inert", stage === "intro");
+  }, [stage]);
 
   const errors = useMemo(
     () =>
@@ -68,6 +102,15 @@ export function App() {
   );
 
   const canSend = draftText.trim().length > 0 && camera.ready && !chat.isStreaming;
+
+  /**
+   * 作用：进入双栏工作台（CTA 与「跳过」共用）
+   * 参数：无
+   * 返回：无
+   */
+  function handleEnterWorkspace(): void {
+    setStage("workspace");
+  }
 
   /**
    * 作用：开始一次按住说话识别
@@ -143,45 +186,59 @@ export function App() {
   }
 
   return (
-    <main className={styles.shell}>
-      <LiveBackdrop />
-      <AppHeader />
-      <section className={styles.workspace} aria-label="AI 视觉对话助手">
-        <div className={styles.leftPane}>
-          <CameraPreview
-            videoRef={camera.videoRef}
-            ready={camera.ready}
-            supported={camera.supported}
-          />
-          <ErrorBanner messages={errors} />
-          <form className={styles.controls} onSubmit={(event) => void handleSubmit(event)}>
-            <TalkButton
-              listening={speech.listening}
-              disabled={chat.isStreaming || !speech.supported}
-              onStart={handleStartTalking}
-              onStop={handleStopTalking}
+    <>
+      {sceneEnabled ? (
+        <Suspense fallback={null}>
+          <Scene />
+        </Suspense>
+      ) : (
+        <LiveBackdrop />
+      )}
+
+      <main
+        ref={shellRef}
+        className={stage === "intro" ? `${styles.shell} ${styles.shellHidden}` : styles.shell}
+      >
+        <AppHeader />
+        <section className={styles.workspace} aria-label="AI 视觉对话助手">
+          <div className={styles.leftPane}>
+            <CameraPreview
+              videoRef={camera.videoRef}
+              ready={camera.ready}
+              supported={camera.supported}
             />
-            <button className={styles.sendButton} type="submit" disabled={!canSend}>
-              发送问题
-            </button>
-            {chat.isStreaming ? (
-              <button className={styles.secondaryButton} type="button" onClick={chat.abort}>
-                停止回答
+            <ErrorBanner messages={errors} />
+            <form className={styles.controls} onSubmit={(event) => void handleSubmit(event)}>
+              <TalkButton
+                listening={speech.listening}
+                disabled={chat.isStreaming || !speech.supported}
+                onStart={handleStartTalking}
+                onStop={handleStopTalking}
+              />
+              <button className={styles.sendButton} type="submit" disabled={!canSend}>
+                发送问题
               </button>
-            ) : null}
-          </form>
-          <TranscriptView
-            value={draftText}
-            listening={speech.listening}
-            disabled={chat.isStreaming}
-            onChange={setDraftText}
-          />
-        </div>
-        <div className={styles.rightPane}>
-          <AnswerView answer={chat.answer} streaming={chat.isStreaming} speaking={speaker.speaking} />
-          <ConversationList history={history} />
-        </div>
-      </section>
-    </main>
+              {chat.isStreaming ? (
+                <button className={styles.secondaryButton} type="button" onClick={chat.abort}>
+                  停止回答
+                </button>
+              ) : null}
+            </form>
+            <TranscriptView
+              value={draftText}
+              listening={speech.listening}
+              disabled={chat.isStreaming}
+              onChange={setDraftText}
+            />
+          </div>
+          <div className={styles.rightPane}>
+            <AnswerView answer={chat.answer} streaming={chat.isStreaming} speaking={speaker.speaking} />
+            <ConversationList history={history} />
+          </div>
+        </section>
+      </main>
+
+      {stage === "intro" ? <CinematicLanding onEnter={handleEnterWorkspace} /> : null}
+    </>
   );
 }

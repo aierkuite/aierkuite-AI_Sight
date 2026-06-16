@@ -1,0 +1,6 @@
+{"file": ".trellis/tasks/06-15-webgl/prd.md", "reason": "Phase 1 验收 DoD + 护栏 + 不碰清单核对"}
+{"file": "plan-cinematic.md", "reason": "§9 每阶段质量门、§11 验收总览、§12 避坑逐条核对"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "lint/build/test 命令、forbidden patterns、测试要求（不得 import Canvas/three）"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "核对 3D 代码零 any、shader 类型化、无 as 强转"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "核对 effects/3D 层契约：纯装饰、零 chat 耦合、cleanup、DPR≤2、pointer-events:none"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核对令牌化颜色、a11y 未动、glow/hover 避坑"}

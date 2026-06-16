@@ -36,3 +36,9 @@ Thumbs.db
 # Local design scratch / advisory notes (not committed)
 /frontend-redesign-plan.md
 /gemini-fronted-advise.md
+/plan-cinematic.md
+/gemini-cinematic-advise.md
+
+# Task-local research dumps & screenshot artifacts (kept out of git; live under .trellis/tasks/)
+.trellis/tasks/*/research/
+.trellis/tasks/*/shots/

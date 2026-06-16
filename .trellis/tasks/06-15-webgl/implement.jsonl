@@ -1,0 +1,6 @@
+{"file": "plan-cinematic.md", "reason": "权威 PRD：分阶段步骤(§8)、避坑补充(§12)、资产管线(§4)、令牌(§5)、文案(§6)"}
+{"file": ".trellis/tasks/06-15-webgl/prd.md", "reason": "task 视角浓缩 PRD + 护栏映射 + zustand 例外说明"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "effects 层契约 + LiveBackdrop canvas contract（DPR≤2/delta-time/reduced-motion/cleanup）——3D 层要遵循同款"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "CSS Modules + 令牌、a11y、box-shadow glow 与 hover 媒体查询避坑"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "TS strict 零 any；shader 材质走 shaderMaterial()+extend()+module augmentation 而非 any"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "解释为何 chat 状态留 App.tsx；zustand 仅装饰层 transient 例外的依据"}

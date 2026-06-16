@@ -10,11 +10,17 @@
     "test": "vitest run --environment jsdom"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
+    "@react-three/postprocessing": "^2.19.1",
     "@vitejs/plugin-react": "4.3.4",
-    "vite": "6.0.7",
-    "typescript": "5.6.3",
+    "postprocessing": "^6.39.1",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "three": "^0.169.0",
+    "typescript": "5.6.3",
+    "vite": "6.0.7",
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@eslint/js": "9.17.0",
@@ -23,6 +29,7 @@
     "@testing-library/user-event": "14.5.2",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
+    "@types/three": "^0.169.0",
     "eslint": "9.17.0",
     "eslint-plugin-react-hooks": "5.1.0",
     "eslint-plugin-react-refresh": "0.4.16",

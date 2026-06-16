@@ -76,4 +76,15 @@
   --dur-1: 0.2s;
   --dur-2: 0.6s;
   --dur-3: 0.8s;
+
+  /* 电影感大标题字体（Phase 1 回退到已加载的 Clash Display / Space Grotesk；Phase 3 自托管 Parabole / PP Neue Montreal） */
+  --font-hero: "Parabole", "Clash Display", "Microsoft YaHei", serif;
+  --font-section: "PP Neue Montreal", "Space Grotesk", "Microsoft YaHei", sans-serif;
+
+  /* 落地页叠层与节奏 */
+  --z-canvas: 0;
+  --z-overlay: 2; /* 文字叠层在 canvas 之上、工作台之下 */
+  --z-chrome: 80; /* 角标 logo / 跳过，参照原站 z-index:80 */
+  --dur-cinematic: 1.4s;
+  --ease-cinematic: cubic-bezier(0.14, 1, 0.34, 1); /* 与原站 header/logo 缓动一致 */
 }
