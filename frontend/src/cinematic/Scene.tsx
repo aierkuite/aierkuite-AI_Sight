@@ -15,6 +15,30 @@ interface Palette {
   accentDeep: THREE.Color;
 }
 
+/** 渲染档位：移动/弱机降画质（更少粒子、更低 DPR、更弱 Bloom），桌面满档 */
+type Quality = "mobile" | "desktop";
+
+/** 各档参数（移动端降画质，桌面满档） */
+const QUALITY_PRESET: Record<Quality, { particles: number; bloom: number; dpr: [number, number] }> = {
+  mobile: { particles: 9000, bloom: 0.8, dpr: [1, 1.5] },
+  desktop: { particles: 28000, bloom: 1.5, dpr: [1, 2] },
+};
+
+/**
+ * 作用：探测渲染档位——触屏/窄屏判为移动档（降粒子数、DPR、Bloom），其余为桌面满档。
+ *   挂载时算一次即可（不随窗口尺寸热切换，避免重建粒子缓冲）。
+ * 参数：无
+ * 返回：'mobile' | 'desktop'
+ */
+function detectQuality(): Quality {
+  if (typeof window === "undefined") {
+    return "desktop";
+  }
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const narrow = window.matchMedia("(max-width: 860px)").matches;
+  return coarse || narrow ? "mobile" : "desktop";
+}
+
 /**
  * 作用：从 CSS 令牌读取调色板（与 LiveBackdrop 同款约定：effects 层只读 CSS 变量，不硬编码颜色）
  * 参数：无
@@ -46,10 +70,11 @@ function bell(x: number, a: number, b: number, c: number, d: number): number {
 
 /**
  * 作用：Canvas 内根——灯光、Hero、粒子、Bloom，并按帧驱动鼠标视差与工作台降强度
- * 参数：palette CSS 令牌派生调色板
+ * 参数：palette CSS 令牌派生调色板；quality 渲染档位（决定粒子数与 Bloom 强度）
  * 返回：场景子树
  */
-function SceneContents({ palette }: { palette: Palette }) {
+function SceneContents({ palette, quality }: { palette: Palette; quality: Quality }) {
+  const preset = QUALITY_PRESET[quality];
   const keyLightRef = useRef<THREE.DirectionalLight>(null);
   const fogRef = useRef<THREE.FogExp2>(null);
   const pointer = useRef({ x: 0, y: 0 });
@@ -161,14 +186,20 @@ function SceneContents({ palette }: { palette: Palette }) {
       <Suspense fallback={null}>
         <RocksField baseColor={palette.accentDeep} emissiveColor={palette.accent} />
       </Suspense>
-      <FluidParticles colorA={palette.accent} colorB={palette.accentStrong} colorDeep={palette.accentDeep} />
+      <FluidParticles
+        colorA={palette.accent}
+        colorB={palette.accentStrong}
+        colorDeep={palette.accentDeep}
+        count={preset.particles}
+      />
 
       <EffectComposer>
         {/* Bloom 强度保持静态：后幕「辉光递减」由粒子减量(uVisible/uOpacity)+渐浓雾自然实现
-            ——亮源变少变暗 → Bloom 贡献随之收敛，无需逐帧改 effect 强度（避开该库 ref 的类型缺陷）。 */}
+            ——亮源变少变暗 → Bloom 贡献随之收敛，无需逐帧改 effect 强度（避开该库 ref 的类型缺陷）。
+            移动档进一步弱化 Bloom（preset.bloom）以省 GPU。 */}
         <Bloom
           mipmapBlur
-          intensity={1.5}
+          intensity={preset.bloom}
           luminanceThreshold={0.18}
           luminanceSmoothing={0.32}
           radius={0.85}
@@ -186,10 +217,11 @@ function SceneContents({ palette }: { palette: Palette }) {
  */
 export default function Scene() {
   const palette = useMemo(() => readPalette(), []);
+  const quality = useMemo(() => detectQuality(), []);
 
   return (
     <Canvas
-      dpr={[1, 2]}
+      dpr={QUALITY_PRESET[quality].dpr}
       gl={{ antialias: true }}
       camera={{ position: [0, 0, 9], fov: 42 }}
       onCreated={({ gl }) => {
@@ -206,7 +238,7 @@ export default function Scene() {
         background: "var(--color-bg)",
       }}
     >
-      <SceneContents palette={palette} />
+      <SceneContents palette={palette} quality={quality} />
     </Canvas>
   );
 }

@@ -14,6 +14,10 @@ interface CinematicState {
   setStage: (stage: CinematicStage) => void;
   /** 写入滚动进度（transient：3D 层在 useFrame 内用 getState 读取，不触发 React 重渲染） */
   setScrollProgress: (value: number) => void;
+  /** 设置氛围音开关（Phase 3：SoundToggle 点击时调用） */
+  setSoundOn: (value: boolean) => void;
+  /** 翻转氛围音开关 */
+  toggleSound: () => void;
   /** 重播开场：回到 intro 并归零滚动 */
   replayIntro: () => void;
 }
@@ -31,5 +35,7 @@ export const useCinematicStore = create<CinematicState>((set) => ({
   soundOn: false,
   setStage: (stage) => set({ stage }),
   setScrollProgress: (value) => set({ scrollProgress: value }),
+  setSoundOn: (value) => set({ soundOn: value }),
+  toggleSound: () => set((state) => ({ soundOn: !state.soundOn })),
   replayIntro: () => set({ stage: "intro", scrollProgress: 0 }),
 }));

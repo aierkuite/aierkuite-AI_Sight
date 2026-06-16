@@ -93,5 +93,18 @@
 - 粒子减量仍保留（`uVisible 1.08→0.25`、`uOpacity 0.95→0.5`、count 仍 28000 只重定位）。
 - trellis-check 二轮（rework delta）7 护栏 + 白屏防护 + uniform 类型化逐条通过；三门绿；真实 GPU 逐幕截图自验「相邻幕一眼可辨不同」。**用户验收：「可以」。**
 
+## Phase 3 验收记录（已通过，2026-06-16）
+
+> 注：trellis-implement 子代理两次撞服务端 520（零落盘）；经用户授权，Phase 3 由主代理**主会话内联实现**。
+
+- 实现：
+  - 氛围音 `ambientAudio.ts`（WebAudio 合成 drone：3 失谐锯齿波 + lowpass + 慢 LFO，零音频资产）+ `SoundToggle.tsx`（chrome 右上，默认静音）；store 加 `setSoundOn`/`toggleSound`。§12-⑤：`AudioContext.resume()` 绑在 SoundToggle onClick（用户手势）；与 TTS 靠 stage 错开（仅 intro 播、进 workspace 淡出停），**不读任何 TTS/chat 状态**；卸载 `dispose()` 淡出 + close 防泄漏。
+  - 自托管字体：`Parabole`/`PP Neue Montreal` woff2 → `public/cinematic/fonts/`，`styles/fonts.css`（`@font-face` + `font-display: swap`）于 `main.tsx` 引入；令牌 `--font-hero`/`--font-section` 生效（拉丁字族，中文走 YaHei 回退）。
+  - 移动降画质：`detectQuality()`（`pointer:coarse`/`max-width:860`）→ 粒子 28000→9000、DPR `[1,2]→[1,1.5]`、Bloom `1.5→0.8`；挂载算一次。
+- lint/build/test 三门绿；trellis-check 9 护栏逐条通过（§12-⑤ 结构性保证、零 TTS 耦合、音频 cleanup、零 any、移动分档、reduced-motion 未破）。
+- 真实 GPU 截图矩阵自验：字体 `document.fonts.check` 为 true；SoundToggle aria-pressed false→true；移动 Hero 布局不溢出 + 降画质；reduced-motion 2D 兜底 + 三幕文字原生滚动可读。**用户验收：氛围音「可以了」**（首版基频 55Hz sub-bass 笔记本听不见 → 抬到 110Hz 锯齿波 + 调大音量后可闻）。
+- 两处合理偏离沿用：Bloom 静态（辉光靠粒子减量+雾物理递减）、CTA 点击进入（跳过始终兜底）。
+- 沉淀进 spec：`state-management.md`（zustand 装饰层受限例外）、`directory-structure.md`（r3f `<Canvas>` 变体契约 + WebAudio 氛围音契约 + 白屏/可闻性 gotcha）。
+
 
 

@@ -1,0 +1,19 @@
+/* 自托管电影感大标题字体（plan §4）。family 名与 tokens.css 的 --font-hero / --font-section 对齐，
+   故定义后这两个令牌自然生效；font-display: swap 在字体到位前先用回退字渲染，避免不可见文本(FOIT)。
+   版权提示：Parabole / PP Neue Montreal 为商用字体，本项目仅作个人/学习性质的克隆复刻，不得商用分发。 */
+
+@font-face {
+  font-family: "Parabole";
+  src: url("/cinematic/fonts/Parabole-BoldText.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "PP Neue Montreal";
+  src: url("/cinematic/fonts/PPNeueMontreal-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}

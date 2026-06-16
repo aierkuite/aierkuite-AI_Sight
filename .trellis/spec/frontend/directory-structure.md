@@ -111,6 +111,69 @@ in this layer MUST follow the same contract:
 > intent (self-contained, reads only props/CSS, decoupled from chat). Reach for a
 > library only if an effect outgrows a few hundred 2D primitives.
 
+### WebGL `<Canvas>` variant contract (`cinematic/` — r3f scene)
+
+The `cinematic/` cinematic landing is a heavier effect that **did** outgrow 2D:
+a react-three-fiber (`@react-three/fiber` + `drei` + `postprocessing`) scene,
+lazy-loaded via `React.lazy`. It is still **decorative** and obeys the same
+purity rule (reads only the decorative store + CSS tokens, never chat/device
+state). A new r3f effect MUST follow this contract — it parallels the
+`LiveBackdrop` 2D contract above:
+
+- **Same seam as `LiveBackdrop`**: one fixed `<Canvas>` at `position:fixed;
+  inset:0; z-index:0; pointer-events:none` (decorative — never eats clicks). The
+  workspace `.shell` sits above at `z-index:1`.
+- **Capability gate before mount**: `detectSceneEnabled()` returns false under
+  `prefers-reduced-motion` **or** when `canvas.getContext("webgl")` is null →
+  render the 2D `LiveBackdrop` fallback instead and keep the workspace reachable.
+  The three.js stack only mounts at runtime in `App.tsx`, **never** in tests
+  (vitest/jsdom has no WebGL — importing `<Canvas>`/three in a test is forbidden).
+- **Tone + dark base**: `gl.toneMapping = ACESFilmicToneMapping` (avoids cheap
+  bloom over-exposure) and `gl.setClearColor(palette.bg, 1)` so a sparse frame
+  never flashes the page white. `dpr={[1, 2]}` (clamp ≤2). Colors come from CSS
+  tokens via `getComputedStyle` (same as the 2D contract), with literal fallbacks.
+- **Pointer parallax via `window` `mousemove`**, written to a ref/store and read
+  in `useFrame` — **no `OrbitControls`**, no canvas pointer events (the canvas is
+  `pointer-events:none`).
+- **GPU-first particles**: `<points>` + a `drei` `shaderMaterial()` registered
+  with `extend()` and a JSX module augmentation for the element — **zero `any`**
+  (see [type-safety.md](./type-safety.md)). Per-frame work is uniform updates
+  only; **never** iterate tens of thousands of `BufferAttribute` entries on the
+  CPU in `useFrame` (blocks the main thread / the SSE stream).
+- **Scroll orchestration is math, not branches**: drive camera/uniforms from
+  `scrollProgress` with `THREE.MathUtils.mapLinear` + `lerp`/`damp` (no `if/else`
+  ladder).
+- **Mobile downscaling**: detect once at mount via `matchMedia("(pointer:
+  coarse)")` / `(max-width: 860px)` → fewer particles, lower DPR, weaker Bloom.
+  Compute once; don't hot-swap on resize (rebuilding the particle buffer churns).
+
+> **Gotcha — additive points white-out.** `gl_PointSize` uses a perspective
+> divide (`k / -mvPosition.z`); an oversized `uSize` (or particles crossing the
+> camera plane) makes tens of thousands of additive sprites saturate the whole
+> canvas to white, which then blooms to full white. Keep `uSize` small (~0.2) and
+> **clamp** `gl_PointSize` (e.g. `min(..., 48.0)`). This cost us a debug cycle.
+
+### Ambient audio contract (`cinematic/ambientAudio.ts` + `SoundToggle`)
+
+Procedurally-synthesized WebAudio drone (no audio asset). It is part of the
+decorative layer and obeys the same purity + cleanup rules:
+
+- **Autoplay-policy compliant**: `new AudioContext()` / `AudioContext.resume()`
+  MUST happen inside a **user-gesture** handler (the `SoundToggle` `onClick`).
+  Scroll/`useEffect`/autoplay are **not** valid gestures — wiring resume to them
+  warns and stays silent. Default **muted** (`soundOn: false`).
+- **Decouple from TTS via `stage`, not by reading TTS**: the drone plays only
+  while `stage === "intro" && soundOn`, and fades out on entering `workspace`.
+  Because TTS only speaks in the workspace, the two never overlap — so the audio
+  module **never imports `useSpeechSynthesis` or any chat/device state** (that
+  would break the decorative-layer purity rule).
+- **Cleanup is mandatory**: on unmount, `dispose()` ramps gain to 0, `stop()`s
+  the oscillators, and `close()`s the `AudioContext` — no lingering nodes or
+  audible tail leaking into the workspace.
+- **Audibility gotcha**: a 55 Hz sine at low gain is inaudible on laptop speakers
+  (sub-bass roll-off). Use an audible low register (~110 Hz) and a harmonic-rich
+  waveform (`sawtooth` through a lowpass), not a near-DC sine.
+
 ---
 
 ## Naming Conventions

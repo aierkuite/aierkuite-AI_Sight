@@ -279,24 +279,26 @@ interface FluidParticlesProps {
   colorB: THREE.Color;
   /** 最深一档强调色（CSS --color-accent-deep 派生），CTA 幕压向它收束氛围 */
   colorDeep: THREE.Color;
+  /** 粒子数（移动端降画质时调小；默认桌面满档 PARTICLE_COUNT） */
+  count?: number;
 }
 
 /**
  * 作用：环绕 Hero 的 GPU 流体发光粒子云
- * 参数：colorA/colorB/colorDeep 来自 CSS 令牌的三档强调色
+ * 参数：colorA/colorB/colorDeep 来自 CSS 令牌的三档强调色；count 粒子数（移动端可降）
  * 返回：<points> + 自定义着色材质
  */
-export function FluidParticles({ colorA, colorB, colorDeep }: FluidParticlesProps) {
+export function FluidParticles({ colorA, colorB, colorDeep, count = PARTICLE_COUNT }: FluidParticlesProps) {
   const materialRef = useRef<FluidParticleMaterialImpl>(null);
 
   // 仅生成一次属性数组；几何体/属性的生命周期交给 r3f 声明式管理（StrictMode 安全，无需手动 dispose）
   const attributes = useMemo(() => {
-    const positions = new Float32Array(PARTICLE_COUNT * 3);
-    const randoms = new Float32Array(PARTICLE_COUNT);
+    const positions = new Float32Array(count * 3);
+    const randoms = new Float32Array(count);
     // aSeed：与 aRandom 解耦的第二随机（aRandom 专用于密度裁剪；aSeed 专用于各幕形态的半径/环/相位分布，
     // 二者独立 -> 后幕裁剪不会系统性偏掉形态的外圈）
-    const seeds = new Float32Array(PARTICLE_COUNT);
-    for (let i = 0; i < PARTICLE_COUNT; i += 1) {
+    const seeds = new Float32Array(count);
+    for (let i = 0; i < count; i += 1) {
       // 外偏的球壳分布，包裹住居中的 Hero
       const radius = 3.2 + Math.sqrt(Math.random()) * 4.0;
       const theta = Math.random() * Math.PI * 2;
@@ -309,7 +311,7 @@ export function FluidParticles({ colorA, colorB, colorDeep }: FluidParticlesProp
       seeds[i] = Math.random();
     }
     return { positions, randoms, seeds };
-  }, []);
+  }, [count]);
 
   useFrame((_, delta) => {
     const material = materialRef.current;

@@ -21,6 +21,14 @@
   pointer-events: none;
 }
 
+/* 右侧角标动作组：氛围音开关 + 跳过（容器不吞点击，子元素各自 auto） */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  pointer-events: none;
+}
+
 .logo {
   font-family: var(--font-section);
   font-size: 0.95rem;

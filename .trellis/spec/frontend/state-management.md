@@ -47,7 +47,43 @@ stored in history (matches `backend/llm-streaming.md`).
 
 For a single screen, **don't**. Props from `App.tsx` are sufficient. Reach for
 `useContext` only if prop-drilling becomes genuinely deep (3+ levels). There is
-no Redux / Zustand / Jotai — adding one for this app is over-engineering.
+no Redux / Zustand / Jotai for **app/business state** — adding one for the chat
+flow is over-engineering.
+
+### Exception: the decorative cinematic layer uses a tiny zustand store
+
+The `cinematic/` WebGL landing (see [directory-structure.md](./directory-structure.md))
+is the **one** place a store is allowed, and only for **decorative state**:
+
+```ts
+// store/cinematic.ts — decorative ONLY
+interface CinematicState {
+  stage: "intro" | "workspace";
+  scrollProgress: number; // 0→1, written every rAF by Lenis
+  soundOn: boolean;
+  // + setStage / setScrollProgress / setSoundOn / toggleSound / replayIntro
+}
+```
+
+**Why an exception**: `scrollProgress` updates ~60×/s from the scroll loop. Routing
+that through React `useState` would re-render the tree every frame (a "re-render
+storm"). The three.js objects instead read it **transiently** inside `useFrame`
+via `useCinematicStore.getState()` — no React re-render, no prop threading:
+
+```ts
+useFrame((_, delta) => {
+  const { stage, scrollProgress } = useCinematicStore.getState(); // transient read
+  // drive camera / uniforms ...
+});
+```
+
+**Hard boundary — never widen this store**: it holds `{ stage, scrollProgress,
+soundOn }` and nothing else. Chat / device / request state (history, transcript,
+draft, streaming answer, errors) stays in `App.tsx` `useState` exactly as above.
+The decorative layer reads only this store + CSS tokens, **never** chat/device
+state (see the `effects/` purity rule in directory-structure.md). If you find
+yourself wanting to put business state in the store, that's the signal you've
+crossed the decorative↔functional boundary — stop.
 
 ---
 

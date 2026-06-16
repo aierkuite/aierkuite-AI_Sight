@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { useCinematicStore } from "../store/cinematic";
+import { SoundToggle } from "./SoundToggle";
 import { useLenisScroll } from "./useLenisScroll";
 import styles from "./CinematicLanding.module.css";
 
@@ -45,9 +46,12 @@ export function CinematicLanding({ onEnter }: CinematicLandingProps) {
     <div className={styles.root} ref={rootRef}>
       <div className={styles.chrome}>
         <span className={styles.logo}>AI 视觉对话助手</span>
-        <button type="button" className={styles.skip} onClick={onEnter}>
-          跳过
-        </button>
+        <div className={styles.actions}>
+          <SoundToggle />
+          <button type="button" className={styles.skip} onClick={onEnter}>
+            跳过
+          </button>
+        </div>
       </div>
 
       <div className={styles.stage}>
