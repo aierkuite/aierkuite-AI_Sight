@@ -75,3 +75,38 @@ Trellis Phase 3 wrap-up. Re-ran all gates: caught one non-hermetic config test (
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: 电影感 WebGL 入场 + 工作台改造（三阶段）
+
+**Date**: 2026-06-16
+**Task**: 电影感 WebGL 入场 + 工作台改造（三阶段）
+**Branch**: `main`
+
+### Summary
+
+参照 hashgraphvc 实现电影感 WebGL 落地页：P1 Hero(r3f 漂浮人形+GPU shader 流体粒子+ACESFilmic/mipmapBlur bloom)+stage 网关接管双栏工作台+WebGL/reduced-motion 兜底；P2 Lenis 三幕滚动长卷，每幕不同背景(眼/声波/数据流/汇聚核)+后幕粒子减量(防光污染)；P3 WebAudio 合成氛围音(§12-⑤ 点击唤醒、stage 错开 TTS)+自托管字体+移动端降画质。effects/3D 层纯装饰零 chat 耦合零 any。修复两处真 bug(粒子白屏/氛围音 sub-bass 听不见)。P3 因 implement 子代理两次 520 改主会话内联实现。沉淀 spec：zustand 装饰层例外、r3f Canvas 契约、WebAudio 约定。lint/build/test 全绿，三阶段各自 commit 并经用户逐阶段验收。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b7dd37d` | (see git log) |
+| `0d0f670` | (see git log) |
+| `c7f2a1e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
