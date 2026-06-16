@@ -10,8 +10,12 @@
   transition: opacity var(--dur-cinematic) var(--ease-cinematic);
 }
 
-/* 开场阶段：工作台保持挂载（摄像头/语音 hook 绑定不变），仅隐藏；inert 经 ref 关闭焦点/无障碍树 */
+/* 开场阶段：工作台保持挂载（摄像头/语音 hook 绑定不变），仅隐藏；inert 经 ref 关闭焦点/无障碍树。
+   position:fixed 让隐藏的 shell 脱离文档流——开场期文档可滚高度只来自落地页长卷(380vh)，
+   避免与 100vh 的 shell 叠加出双滚动条；切回 workspace 时移除本类、shell 复位为常规流。 */
 .shellHidden {
+  position: fixed;
+  inset: 0;
   opacity: 0;
   pointer-events: none;
 }

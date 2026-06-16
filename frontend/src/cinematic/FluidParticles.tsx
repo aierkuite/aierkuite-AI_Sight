@@ -97,37 +97,104 @@ uniform float uSize;
 uniform float uAmplitude;
 uniform float uNoiseScale;
 uniform float uFlowSpeed;
+uniform float uVisible;
+uniform float uMorph;
 attribute float aRandom;
+attribute float aSeed;
 varying float vIntensity;
+varying float vKeep;
+varying float vForm;
 
 ${NOISE_GLSL}
 
+// 钟形幕权重：在 [a,b] 升起、在 [c,d] 落下，其余为 0（与 Scene.tsx 的 bell() 同窗口）
+float bell(float x, float a, float b, float c, float d){
+  return smoothstep(a, b, x) * (1.0 - smoothstep(c, d, x));
+}
+
 void main() {
+  // —— 分幕权重（=scrollProgress 驱动；窗口对齐文字 crossfade）——
+  // 每幕用一个「明确的目标形态」，权重 0→1→0；Hero/幕间回到平静球壳，CTA 收束成核。
+  float m = uMorph;
+  float wEye  = bell(m, 0.17, 0.27, 0.38, 0.47);  // Act2a 眼/虹膜
+  float wWave = bell(m, 0.42, 0.50, 0.58, 0.65);  // Act2b 声波
+  float wFlow = bell(m, 0.59, 0.67, 0.77, 0.83);  // Act2c 数据流
+  float wCta  = smoothstep(0.82, 0.93, m);        // Act3 收束成核
+  float formW = max(max(wEye, wWave), max(wFlow, wCta));
+
   vec3 base = position;
 
-  // 缓慢绕 Y 整体旋流，给粒子云一个公转
-  float ang = uTime * 0.06;
+  // 缓慢绕 Y 整体旋流，给球壳一个公转；某幕成形时减弱旋流，让形态读得清
+  float ang = uTime * 0.06 * (1.0 - 0.6 * formW);
   float ca = cos(ang);
   float sa = sin(ang);
   base.xz = mat2(ca, -sa, sa, ca) * base.xz;
 
-  // curl 旋度场位移（GPU 计算），噪声场随时间向上滚动 -> 流体流动观感
+  // curl 旋度场位移（GPU 计算）；成形时降幅 -> 球壳保留湍流、各幕形态干净可辨
   vec3 flow = curlNoise(base * uNoiseScale + vec3(0.0, uTime * uFlowSpeed * 0.08, 0.0));
-  vec3 displaced = base + flow * uAmplitude * (0.6 + aRandom * 0.8);
+  float curlAmp = uAmplitude * (0.6 + aRandom * 0.8) * (1.0 - 0.75 * formW);
+  vec3 sphere = base + flow * curlAmp;
+
+  // —— 各幕的显式目标形态（用稳定的原始 position + 解耦随机 aSeed 计算，与裁剪用的 aRandom 互不影响）——
+  float theta = atan(position.y, position.x);   // 球面采样的均匀角
+  float seed = aSeed;
+
+  // 眼/虹膜：正对相机的薄盘，5 圈同心环 + 放射状纤维 + 中心瞳孔空洞
+  float eyeAng = theta + uTime * 0.04;
+  float ring = floor(seed * 5.0) * 0.45;                 // 5 圈同心环（瞳孔留空）
+  float eyeR = 1.25 + ring + 0.12 * sin(eyeAng * 22.0);  // 放射纤维
+  float eyeZ = (seed - 0.5) * 0.30;                      // 极薄 -> 正对相机
+  vec3 eyePos = vec3(cos(eyeAng) * eyeR, sin(eyeAng) * eyeR, eyeZ);
+
+  // 声波：水平大盘(xz)，y 随半径做向外滚动的同心波（双频叠加）
+  float waveR = 0.5 + sqrt(seed) * 6.8;
+  float ripple = sin(waveR * 1.5 - uTime * 2.6) * 0.95
+               + sin(waveR * 0.7 - uTime * 1.3) * 0.35;
+  vec3 wavePos = vec3(cos(theta) * waveR, ripple, sin(theta) * waveR);
+
+  // 数据流：绕 z 轴的管状隧道，粒子沿 +z 朝相机贯穿（mod 循环成无尽流）
+  float tubeR = 0.7 + seed * 2.7;
+  float flowAng = theta + uTime * 0.12;
+  float span = 18.0;
+  float zStream = mod(seed * span + uTime * 4.2, span) - span * 0.5;
+  vec3 flowPos = vec3(cos(flowAng) * tubeR, sin(flowAng) * tubeR, zStream);
+
+  // CTA：朝中心轻柔汇聚成小核
+  vec3 corePos = normalize(position) * (0.35 + seed * 1.35);
+
+  // 自平静球壳依权重混合到各幕形态（窗口近乎互斥，顺序 mix 即平滑过场）
+  vec3 pos = sphere;
+  pos = mix(pos, eyePos,  wEye);
+  pos = mix(pos, wavePos, wWave);
+  pos = mix(pos, flowPos, wFlow);
+  pos = mix(pos, corePos, wCta);
 
   vIntensity = clamp(length(flow) * 0.6, 0.0, 1.0);
+  vForm = formW;
 
-  vec4 mvPosition = modelViewMatrix * vec4(displaced, 1.0);
+  // —— 密度减量（用户头号反馈）：按可见阈值 uVisible 软裁剪——aRandom 超阈值的粒子点尺寸归零，
+  // GPU 直接丢弃其片元（后幕真实减少渲染粒子数，不是只调暗）。窄过渡带避免阈值扫过时硬跳。
+  vKeep = 1.0 - smoothstep(uVisible - 0.08, uVisible, aRandom);
+
+  vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
   gl_Position = projectionMatrix * mvPosition;
-  gl_PointSize = uSize * (0.5 + aRandom) * (220.0 / -mvPosition.z);
+  // 数据流幕的点略大略亮，强化「流线」速度感
+  float sizeBoost = 1.0 + 0.5 * wFlow;
+  // 上限钳制：数据流幕粒子会贯穿相机平面（-mvz→0 时透视因子发散），钳到 48px 之上不超
+  // （> 其余幕的自然上限 ~27px，故不影响 Hero/眼/声波），杜绝单点撑大叠加成白（沿用 P1 防白屏教训）。
+  gl_PointSize = min(uSize * (0.5 + aRandom) * (220.0 / -mvPosition.z) * vKeep * sizeBoost, 48.0);
 }
 `;
 
 const FRAGMENT_SHADER = /* glsl */ `
 uniform float uOpacity;
+uniform float uTone;
 uniform vec3 uColorA;
 uniform vec3 uColorB;
+uniform vec3 uColorDeep;
 varying float vIntensity;
+varying float vKeep;
+varying float vForm;
 
 void main() {
   vec2 c = gl_PointCoord - vec2(0.5);
@@ -136,10 +203,15 @@ void main() {
   alpha = pow(alpha, 1.6);
 
   vec3 color = mix(uColorA, uColorB, vIntensity);
-  // 提亮核心，让 Bloom 在近黑底上吃到强泛光
-  color += uColorB * pow(alpha, 3.0) * 0.6;
+  // 提亮核心，让 Bloom 在近黑底上吃到强泛光；CTA(uTone↑) 时收敛核心更克制
+  color += uColorB * pow(alpha, 3.0) * 0.6 * (1.0 - 0.45 * uTone);
+  // 能力幕成形时（vForm↑）略提亮 -> 「聚焦感」；CTA 时不提亮
+  color += uColorB * vForm * 0.12 * (1.0 - uTone);
+  // CTA：整体压向最深一档强调色 -> 最暗最克制的收束氛围
+  color = mix(color, uColorDeep, uTone * 0.55);
 
-  gl_FragColor = vec4(color, alpha * uOpacity);
+  // vKeep 同时作用于透明度：过渡带内的粒子柔和淡出，避免裁剪硬边
+  gl_FragColor = vec4(color, alpha * uOpacity * vKeep);
 }
 `;
 
@@ -150,9 +222,13 @@ type FluidParticleMaterialImpl = THREE.ShaderMaterial & {
   uAmplitude: number;
   uNoiseScale: number;
   uFlowSpeed: number;
+  uVisible: number;
+  uMorph: number;
   uOpacity: number;
+  uTone: number;
   uColorA: THREE.Color;
   uColorB: THREE.Color;
+  uColorDeep: THREE.Color;
 };
 
 const FluidParticleMaterial = shaderMaterial(
@@ -165,10 +241,17 @@ const FluidParticleMaterial = shaderMaterial(
     uAmplitude: 1.15,
     uNoiseScale: 0.34,
     uFlowSpeed: 1,
+    // uVisible：可见阈值，>1 时全可见。Hero 取 1.08（不裁剪任何粒子），后幕降至 ~0.25（裁掉约 3/4）。
+    uVisible: 1.08,
+    // uMorph：形态相位（=scrollProgress），驱动眼/声波/数据流/收束四态意象，Hero/幕间为平静球壳。
+    uMorph: 0,
     uOpacity: 0.92,
+    // uTone：色调档（0=亮 periwinkle，→1 压向最深一档强调色），CTA 幕拉高 -> 最暗最克制。
+    uTone: 0,
     // 默认回退色（与 LiveBackdrop 的 periwinkle 回退一致）；运行时由 CSS 令牌覆盖
     uColorA: new THREE.Color("#9bb8e1"),
     uColorB: new THREE.Color("#b8cdee"),
+    uColorDeep: new THREE.Color("#2c4e73"),
   },
   VERTEX_SHADER,
   FRAGMENT_SHADER,
@@ -194,20 +277,25 @@ interface FluidParticlesProps {
   colorA: THREE.Color;
   /** 粒子高光/核心色（CSS --color-accent-strong 派生） */
   colorB: THREE.Color;
+  /** 最深一档强调色（CSS --color-accent-deep 派生），CTA 幕压向它收束氛围 */
+  colorDeep: THREE.Color;
 }
 
 /**
  * 作用：环绕 Hero 的 GPU 流体发光粒子云
- * 参数：colorA/colorB 来自 CSS 令牌的两档强调色
+ * 参数：colorA/colorB/colorDeep 来自 CSS 令牌的三档强调色
  * 返回：<points> + 自定义着色材质
  */
-export function FluidParticles({ colorA, colorB }: FluidParticlesProps) {
+export function FluidParticles({ colorA, colorB, colorDeep }: FluidParticlesProps) {
   const materialRef = useRef<FluidParticleMaterialImpl>(null);
 
   // 仅生成一次属性数组；几何体/属性的生命周期交给 r3f 声明式管理（StrictMode 安全，无需手动 dispose）
   const attributes = useMemo(() => {
     const positions = new Float32Array(PARTICLE_COUNT * 3);
     const randoms = new Float32Array(PARTICLE_COUNT);
+    // aSeed：与 aRandom 解耦的第二随机（aRandom 专用于密度裁剪；aSeed 专用于各幕形态的半径/环/相位分布，
+    // 二者独立 -> 后幕裁剪不会系统性偏掉形态的外圈）
+    const seeds = new Float32Array(PARTICLE_COUNT);
     for (let i = 0; i < PARTICLE_COUNT; i += 1) {
       // 外偏的球壳分布，包裹住居中的 Hero
       const radius = 3.2 + Math.sqrt(Math.random()) * 4.0;
@@ -218,8 +306,9 @@ export function FluidParticles({ colorA, colorB }: FluidParticlesProps) {
       positions[i * 3 + 1] = radius * Math.cos(phi);
       positions[i * 3 + 2] = radius * sinPhi * Math.sin(theta);
       randoms[i] = Math.random();
+      seeds[i] = Math.random();
     }
-    return { positions, randoms };
+    return { positions, randoms, seeds };
   }, []);
 
   useFrame((_, delta) => {
@@ -230,9 +319,31 @@ export function FluidParticles({ colorA, colorB }: FluidParticlesProps) {
     // 唯一的每帧 CPU 工作：递增 uTime；所有位移在 GPU 顶点着色器里算
     material.uTime += delta;
 
-    // 进入工作台后整体降为低强度氛围（暗、慢、泛光自然减弱）
-    const workspace = useCinematicStore.getState().stage === "workspace";
-    material.uOpacity = THREE.MathUtils.damp(material.uOpacity, workspace ? 0.3 : 0.92, 2.4, delta);
+    const { stage, scrollProgress } = useCinematicStore.getState();
+    const workspace = stage === "workspace";
+    // 工作台用 Hero-calm 相位（忽略残留滚动进度）；开场按真实滚动进度逐幕减量
+    const p = workspace ? 0 : scrollProgress;
+
+    // 密度逐幕减量（用户头号反馈：后幕避免「光污染」）：Hero 满（1.08，不裁剪）→ CTA 最稀（0.25，裁约 3/4）
+    const visibleTarget = workspace
+      ? 0.42
+      : THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(p, 0.15, 0.85, 1.08, 0.25), 0.25, 1.08);
+    material.uVisible = THREE.MathUtils.damp(material.uVisible, visibleTarget, 2.4, delta);
+
+    // 不透明度同步逐幕降低（Hero 偏亮 → 后幕收敛）
+    const opacityTarget = workspace ? 0.3 : THREE.MathUtils.lerp(0.95, 0.5, p);
+    material.uOpacity = THREE.MathUtils.damp(material.uOpacity, opacityTarget, 2.4, delta);
+
+    // 形态相位轻阻尼跟随滚动；工作台回到平静球壳
+    material.uMorph = THREE.MathUtils.damp(material.uMorph, workspace ? 0 : p, 6, delta);
+
+    // 色调档：能力幕保持亮 periwinkle，CTA 幕拉高 -> 压向最深一档色（最暗最克制）；工作台偏深
+    const toneTarget = workspace
+      ? 0.5
+      : THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(p, 0.8, 0.95, 0, 0.85), 0, 0.85);
+    material.uTone = THREE.MathUtils.damp(material.uTone, toneTarget, 2.4, delta);
+
+    // 进入工作台后整体放慢流速（暗、慢、泛光自然减弱）
     material.uFlowSpeed = THREE.MathUtils.damp(material.uFlowSpeed, workspace ? 0.45 : 1, 2.4, delta);
   });
 
@@ -241,6 +352,7 @@ export function FluidParticles({ colorA, colorB }: FluidParticlesProps) {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[attributes.positions, 3]} />
         <bufferAttribute attach="attributes-aRandom" args={[attributes.randoms, 1]} />
+        <bufferAttribute attach="attributes-aSeed" args={[attributes.seeds, 1]} />
       </bufferGeometry>
       <fluidParticleMaterial
         ref={materialRef}
@@ -249,6 +361,7 @@ export function FluidParticles({ colorA, colorB }: FluidParticlesProps) {
         blending={THREE.AdditiveBlending}
         uColorA={colorA}
         uColorB={colorB}
+        uColorDeep={colorDeep}
       />
     </points>
   );

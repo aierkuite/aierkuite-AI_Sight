@@ -78,3 +78,20 @@
 
 - **粒子减量**：用户指出后续幕粒子过密像「光污染」。Hero/Act-1 密度保留；**Act 2（能力）/ Act 3（CTA）必须按 `scrollProgress` 把粒子数/不透明度/辉光逐幕降下来**（如用密度 uniform 或 count 淡出），不要全程维持 Hero 密度。详见 auto-memory `cinematic-particle-density`。
 
+## Phase 2 验收记录（已通过，2026-06-16）
+
+- 实现：`useLenisScroll`（Lenis 1.3.23 平滑滚动 → `store.scrollProgress`，reduced-motion 走原生滚动 + 监听仍写 progress）；`CinematicLanding` 改 ~380vh 长卷、五幕文字按 `--sp` crossfade；`Scene` 按 scrollProgress 用 `MathUtils.mapLinear/damp` 编排相机 dolly + `FogExp2` + 焦点；`FluidParticles` 加 `uVisible`(真实裁剪减量) + `uMorph`(眼/声波/数据流三态)；新增 `RocksField`（rocks.glb + waternormals 法线）；`.shellHidden→position:fixed` 解决长卷双滚动条。
+- lint / build / test 三门全绿；trellis-check 10 条护栏逐条通过、零违规（含 Lenis cleanup、StrictMode 安全、reduced-motion 分支、布局接缝、零 any、零耦合）。
+- 真实 GPU 逐幕截图自验：五幕（看见你所见 / 它看得见 / 它听得懂 / 它边想边答 / 准备好了吗）文字与 3D 焦点同步揭示、过场连贯；`--sp` 与实际滚动比吻合（Lenis 链路通）；**粒子密度 Hero→CTA 单调递减**（PNG 体积 1.25MB→322KB 佐证），落实用户「后幕减量」反馈；滚到底点 CTA → 工作台接管正常。
+- 两处合理偏离：Bloom intensity 静态（辉光改由 fog.density + 粒子减量物理递减，规避 postprocessing@2.19 ref 类型缺陷的 any/as）；CTA 点击进入（非滚到底自动进），「跳过」始终兜底。
+
+### Phase 2 视觉迭代：每幕差异化（用户反馈「每个画面就字不一样，应像原站每屏不同背景」）
+
+- 把单一弱 `uMorph` 拆成四个明确形态函数 + 权重混合，每幕在「相机机位 / 主导形态 / 人形可见度 / 色调雾」四维拉开：
+  - Act1 Hero：人形 + 球壳粒子云（满）；Act2a 它看得见：同心环「眼/虹膜」；Act2b 它听得懂：低视角水平声波涟漪场；Act2c 它边想边答：朝相机贯穿的放射数据流隧道；Act3 准备好了吗：粒子汇聚柔光核 + 人形远小回归（最稀最静）。
+  - 新增 `aSeed` 属性、`uTone`/`uColorDeep` uniform；`gl_PointSize` 加 48px 上限防数据流幕穿越相机平面的加法饱和白屏（Phase1 同款坑的预防）。
+- 粒子减量仍保留（`uVisible 1.08→0.25`、`uOpacity 0.95→0.5`、count 仍 28000 只重定位）。
+- trellis-check 二轮（rework delta）7 护栏 + 白屏防护 + uniform 类型化逐条通过；三门绿；真实 GPU 逐幕截图自验「相邻幕一眼可辨不同」。**用户验收：「可以」。**
+
+
+

@@ -36,6 +36,9 @@ export function HeroFigure({ baseColor, emissiveColor }: HeroFigureProps) {
         emissiveIntensity: INTRO_EMISSIVE,
         metalness: 0.94,
         roughness: 0.26,
+        // 透明：进能力幕时淡出（不挡眼/声波/数据流形态），CTA 幕小而远地弱回归成「柔光核」
+        transparent: true,
+        opacity: 1,
       }),
     [baseColor, emissiveColor],
   );
@@ -67,16 +70,35 @@ export function HeroFigure({ baseColor, emissiveColor }: HeroFigureProps) {
       return;
     }
     const t = state.clock.elapsedTime;
-    const workspace = useCinematicStore.getState().stage === "workspace";
+    const { stage, scrollProgress } = useCinematicStore.getState();
+    const workspace = stage === "workspace";
+    // 工作台回到 Hero-calm（满身居中漂浮）；开场按真实滚动进度做可见度编排
+    const p = workspace ? 0 : scrollProgress;
     const spin = workspace ? 0.06 : 0.16;
 
-    group.position.y = Math.sin(t * 0.6) * 0.28;
+    // 可见度：Hero 满；进能力幕(0.10→0.20)淡出让位给眼/声波/数据流；CTA(0.84→0.95)弱回归
+    const heroVis = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(p, 0.1, 0.2, 1, 0), 0, 1);
+    const ctaVis = THREE.MathUtils.clamp(THREE.MathUtils.mapLinear(p, 0.84, 0.95, 0, 1), 0, 1);
+    const vis = Math.max(heroVis, ctaVis * 0.55); // CTA 仅半强度回归 -> 远处柔光核，不抢戏
+
+    material.opacity = THREE.MathUtils.damp(material.opacity, vis, 3, delta);
+    group.visible = material.opacity > 0.01;
+
+    // CTA：缩小并后退成远处小核；Hero：原尺寸居中、缓慢漂浮（漂浮幅度随 CTA 收敛）
+    const scaleK = THREE.MathUtils.lerp(1, 0.5, ctaVis);
+    group.scale.setScalar(scaleK);
+    group.position.y = Math.sin(t * 0.6) * 0.28 * (1 - ctaVis);
+    group.position.z = THREE.MathUtils.lerp(0, -2.5, ctaVis);
     group.rotation.y += delta * spin;
     group.rotation.z = Math.sin(t * 0.4) * 0.04;
 
+    // 自发光：工作台压暗；CTA 略提亮 -> 远处「柔光核」的辉光感
+    const emTarget = workspace
+      ? WORKSPACE_EMISSIVE
+      : THREE.MathUtils.lerp(INTRO_EMISSIVE, 0.8, ctaVis);
     material.emissiveIntensity = THREE.MathUtils.damp(
       material.emissiveIntensity,
-      workspace ? WORKSPACE_EMISSIVE : INTRO_EMISSIVE,
+      emTarget,
       2.4,
       delta,
     );

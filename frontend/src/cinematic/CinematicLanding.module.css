@@ -1,19 +1,16 @@
-.overlay {
-  position: fixed;
-  inset: 0;
+/* 滚动长卷：root 在常规流里撑出 ~380vh 文档高度，三幕叠层用 fixed 居中、按 --sp 区间 crossfade。
+   --sp（0→1）由 CinematicLanding 透明订阅 store 后写入；下方各幕用 clamp()/min() 做区间映射。 */
+.root {
+  --sp: 0;
+  position: relative;
   z-index: var(--z-overlay);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-6);
+  min-height: 380vh;
   color: var(--color-text);
-  text-align: center;
   pointer-events: none; /* 容器不吞点击，仅交互元素 pointer-events:auto */
 }
 
 .chrome {
-  position: absolute;
+  position: fixed;
   top: var(--space-5);
   right: var(--space-5);
   left: var(--space-5);
@@ -50,12 +47,70 @@
     border-color var(--dur-1) var(--ease-smooth);
 }
 
-.hero {
+/* 三幕舞台：固定铺满视口，各幕绝对叠放、靠 opacity 区间 crossfade */
+.stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.act {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  text-align: center;
+  will-change: opacity, transform;
+}
+
+.actInner {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-5);
-  max-width: min(92vw, 1080px);
+  width: min(92vw, 1080px);
+}
+
+/* —— 各幕区间映射（--sp 为无量纲数；clamp(0,…,1) 钳成透明度，min() 取淡入/淡出交集）—— */
+/* Act1 Hero：sp 0→0.22 淡出，内容随滚动上浮 */
+.hero {
+  opacity: clamp(0, calc((0.22 - var(--sp)) / 0.1), 1);
+  transform: translateY(clamp(-60px, calc(var(--sp) * -260px), 0px));
+}
+
+/* Act2 ①它看得见：区间 [0.18, 0.46]，中心 ~0.32 */
+.beat1 {
+  opacity: min(
+    clamp(0, calc((var(--sp) - 0.18) / 0.1), 1),
+    clamp(0, calc((0.46 - var(--sp)) / 0.1), 1)
+  );
+  transform: translateY(clamp(-28px, calc((0.32 - var(--sp)) * 200px), 28px));
+}
+
+/* Act2 ②它听得懂：区间 [0.4, 0.64]，中心 ~0.52 */
+.beat2 {
+  opacity: min(
+    clamp(0, calc((var(--sp) - 0.4) / 0.1), 1),
+    clamp(0, calc((0.64 - var(--sp)) / 0.1), 1)
+  );
+  transform: translateY(clamp(-28px, calc((0.52 - var(--sp)) * 200px), 28px));
+}
+
+/* Act2 ③它边想边答：区间 [0.58, 0.82]，中心 ~0.7 */
+.beat3 {
+  opacity: min(
+    clamp(0, calc((var(--sp) - 0.58) / 0.1), 1),
+    clamp(0, calc((0.82 - var(--sp)) / 0.1), 1)
+  );
+  transform: translateY(clamp(-28px, calc((0.7 - var(--sp)) * 200px), 28px));
+}
+
+/* Act3 CTA：sp 0.8→0.9 淡入并保持到底，内容自下而上就位 */
+.cta {
+  opacity: clamp(0, calc((var(--sp) - 0.8) / 0.1), 1);
+  transform: translateY(clamp(-28px, calc((0.92 - var(--sp)) * 200px), 40px));
 }
 
 .title {
@@ -79,7 +134,36 @@
   animation: rise var(--dur-cinematic) var(--ease-cinematic) 0.15s both;
 }
 
-.cta {
+.beatTitle {
+  margin: 0;
+  font-family: var(--font-hero);
+  font-weight: 700;
+  font-size: clamp(2.2rem, 6.5vw, 5rem);
+  line-height: 1.06;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+  text-shadow: 0 0 40px var(--color-glow);
+}
+
+.beatLead {
+  margin: 0;
+  font-family: var(--font-section);
+  font-size: clamp(1rem, 2.2vw, 1.45rem);
+  font-weight: 500;
+  color: var(--color-muted);
+}
+
+.ctaTitle {
+  margin: 0;
+  font-family: var(--font-hero);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 7vw, 5.5rem);
+  line-height: 1.04;
+  color: var(--color-text);
+  text-shadow: 0 0 48px var(--color-glow);
+}
+
+.ctaButton {
   min-height: 56px;
   margin-top: var(--space-2);
   padding: 0 var(--space-6);
@@ -92,18 +176,17 @@
   border: 1px solid var(--color-accent-strong);
   border-radius: var(--radius-pill);
   cursor: pointer;
-  pointer-events: auto;
+  pointer-events: none; /* 由 JS 按滚动阈值切到 auto（隐形态不吞点击） */
   /* 外发光用 box-shadow（渲染在边框盒之外，不被裁切） */
   box-shadow: 0 0 40px -6px var(--color-glow);
   transition:
     background var(--dur-1) var(--ease-smooth),
     box-shadow var(--dur-2) var(--ease-smooth),
     transform var(--dur-1) var(--ease-smooth);
-  animation: rise var(--dur-cinematic) var(--ease-cinematic) 0.3s both;
 }
 
 .scrollHint {
-  position: absolute;
+  position: fixed;
   bottom: var(--space-5);
   left: 50%;
   display: flex;
@@ -114,6 +197,8 @@
   font-size: 0.72rem;
   letter-spacing: 0.22em;
   color: var(--color-dim);
+  /* 进入能力幕前可见，sp 越过 0.12 后淡出 */
+  opacity: clamp(0, calc((0.12 - var(--sp)) / 0.1), 1);
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -146,16 +231,31 @@
     border-color: var(--color-border-strong);
   }
 
-  .cta:hover {
+  .ctaButton:hover {
     background: var(--color-accent-strong);
     box-shadow: 0 0 64px -2px var(--color-glow);
     transform: translateY(-1px);
   }
 }
 
+/* reduced-motion：保留滚动联动的 opacity crossfade（揭示需要），去掉位移漂移 */
+@media (prefers-reduced-motion: reduce) {
+  .act {
+    transform: none !important;
+  }
+}
+
 @media (max-width: 860px) {
   .title {
     font-size: clamp(2.2rem, 11vw, 4rem);
+  }
+
+  .beatTitle {
+    font-size: clamp(2rem, 9vw, 3.4rem);
+  }
+
+  .ctaTitle {
+    font-size: clamp(2.2rem, 10vw, 3.8rem);
   }
 
   .chrome {
