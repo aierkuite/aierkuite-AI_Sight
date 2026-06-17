@@ -29,22 +29,36 @@ backend/
 │   ├── __init__.py
 │   ├── main.py          # app factory, startup config validation, logging + CORS, router include
 │   ├── config.py        # Settings (pydantic-settings) + cached get_settings()
-│   ├── schemas.py       # Pydantic models: ChatRequest, HistoryTurn, SSE event payloads
+│   ├── schemas.py       # Pydantic models: ChatRequest, HistoryTurn, TtsRequest, SSE event payloads
 │   ├── errors.py        # AppError hierarchy + OpenAI-exception → zh-CN message mapping
 │   ├── routes/
 │   │   ├── __init__.py
-│   │   └── chat.py      # POST /api/chat — validate request, return EventSourceResponse
+│   │   ├── chat.py      # POST /api/chat — validate request, return EventSourceResponse
+│   │   └── tts.py       # POST /api/tts  — validate text, return audio/wav (or 502 + {message})
 │   └── services/
 │       ├── __init__.py
-│       └── llm.py       # AsyncOpenAI client, multimodal message build, async stream generator
+│       ├── llm.py                 # AsyncOpenAI client, multimodal message build, async stream generator
+│       ├── tts.py                 # single httpx.AsyncClient → GPT-SoVITS POST /tts; httpx→AppError map
+│       ├── gpt_sovits_runtime.py  # optional auto-start of the local api_v2.py subprocess + weight setup
+│       └── audio_filter.py        # WAV post-filter (noise gate + high/low-pass) on the synthesized bytes
 └── tests/
-    ├── test_config.py   # missing required var → startup fails
-    └── test_chat.py     # /api/chat happy path (mocked AsyncOpenAI) + error mapping
+    ├── test_config.py            # missing required var → startup fails
+    ├── test_chat.py              # /api/chat happy path (mocked AsyncOpenAI) + error mapping
+    ├── test_tts.py               # /api/tts happy path + httpx-error mapping (502) + 422 validation
+    ├── test_gpt_sovits_runtime.py # probe / start / weight-set / shutdown lifecycle
+    └── test_audio_filter.py      # WAV filter behavior
 ```
 
 Start with this set. Add a module only when a real responsibility appears
 (e.g. a second route → keep it in `routes/`; a non-LLM integration → new
 `services/<name>.py`). Do not pre-create empty packages.
+
+> The `services/` layer is no longer LLM-only: `tts.py` is an HTTP integration
+> with a local GPT-SoVITS service, and `gpt_sovits_runtime.py` can **manage a
+> child process** (the backend is otherwise stateless/persistence-free — this
+> subprocess is the one managed external resource, started/stopped in the
+> `lifespan`). Both still map upstream failures to domain errors and never touch
+> FastAPI request/response objects.
 
 ---
 

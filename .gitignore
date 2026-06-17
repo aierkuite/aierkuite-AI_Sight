@@ -38,6 +38,11 @@ Thumbs.db
 /gemini-fronted-advise.md
 /plan-cinematic.md
 /gemini-cinematic-advise.md
+/plan-custom-voice.md
+
+# Local GPT-SoVITS runtime logs (machine-local, not committed)
+/gpt-sovits-api.log
+/gpt-sovits-api.err.log
 
 # Task-local research dumps & screenshot artifacts (kept out of git; live under .trellis/tasks/)
 .trellis/tasks/*/research/

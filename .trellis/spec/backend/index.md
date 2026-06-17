@@ -14,10 +14,17 @@
 Browser ──POST /api/chat (text + 1 screenshot + last 6 rounds)──▶ FastAPI
 FastAPI ──multimodal chat.completions(stream=True)──▶ OpenAI-compatible model
 FastAPI ──SSE: data:{delta} … event:done / event:error──▶ Browser
+
+Browser ──POST /api/tts {text} (full Japanese answer)──▶ FastAPI
+FastAPI ──POST /tts (httpx)──▶ local GPT-SoVITS api_v2.py
+FastAPI ──audio/wav body (or 502 {message})──▶ Browser
 ```
 
 - Runtime: Python + FastAPI (ASGI), run with `uvicorn app.main:app`.
 - LLM access: `openai` SDK `AsyncOpenAI` pointed at `OPENAI_BASE_URL`.
+- TTS access: `httpx.AsyncClient` → local GPT-SoVITS `api_v2.py` `POST /tts`
+  (answers are Japanese; `text_lang=prompt_lang=ja`). Optionally auto-starts that
+  subprocess at boot (see [Configuration](./configuration.md)).
 - Streaming: `sse-starlette` `EventSourceResponse`.
 - Config: `pydantic-settings`, validated **fail-fast** at startup.
 - Dependency tooling: `venv` + `requirements.txt`.
@@ -29,9 +36,9 @@ FastAPI ──SSE: data:{delta} … event:done / event:error──▶ Browser
 | Guide | Description |
 |-------|-------------|
 | [Directory Structure](./directory-structure.md) | Layered-lite module layout (`app/main.py`, `config.py`, `routes/`, `services/`, `schemas.py`) |
-| [Configuration](./configuration.md) | `.env` vars, `pydantic-settings`, required-var validation, API key protection |
+| [Configuration](./configuration.md) | `.env` vars (incl. GPT-SoVITS TTS + auto-start), `pydantic-settings`, required-var validation, API key protection |
 | [LLM & Streaming](./llm-streaming.md) | `AsyncOpenAI` client, multimodal message build, `/api/chat` SSE contract, cost controls |
-| [Error Handling](./error-handling.md) | Startup fail-fast vs in-stream `event: error`, OpenAI exception → zh-CN mapping |
+| [Error Handling](./error-handling.md) | Startup fail-fast, in-stream `event: error` (`/api/chat`), `/api/tts` 502 + `{message}`, OpenAI + httpx exception → zh-CN mapping |
 | [Logging Guidelines](./logging-guidelines.md) | stdlib logging, levels, and what must never be logged (secrets, image bytes, conversation content) |
 | [Quality Guidelines](./quality-guidelines.md) | ruff, type hints, pytest, async correctness, forbidden/required patterns |
 

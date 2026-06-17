@@ -35,6 +35,37 @@ errors as `event: error` / `data: {"message": "..."}` (see
 
 ---
 
+## Domain 2b — `/api/tts` (non-SSE, HTTP status carries the error)
+
+Unlike `/api/chat`, `/api/tts` returns a **single binary WAV body**, not a
+stream — there is no `event: error` channel, so failures use the HTTP status:
+
+| Outcome | Response |
+|---------|----------|
+| Success | `200` + `Response(content=audio, media_type="audio/wav")` |
+| Request validation (empty / >2000 chars) | `422` (FastAPI/Pydantic, before the service runs) |
+| Upstream synth failure | `502` + `JSONResponse({"message": "<safe zh-CN>"})` |
+
+The route catches **everything** and maps via `to_user_message(exc)`; the `{message}`
+shape matches `/api/chat` so the frontend reads `message` uniformly.
+
+### httpx exception → zh-CN, mapped in the **service layer**
+
+`services/tts.py` translates `httpx` errors into `AppError` at the call site, so
+`errors.py` needs no `httpx` branches — its existing `AppError → str(exc)`
+pass-through delivers the message. This keeps provider-specific exception types
+out of `errors.py`.
+
+| `httpx` exception (in `synthesize_audio`) | `AppError` message (zh-CN) |
+|-------------------------------------------|-----------------------------|
+| `httpx.TimeoutException` | `语音合成服务响应超时，请稍后再试` |
+| `httpx.ConnectError` | `无法连接语音合成服务，请确认 GPT-SoVITS 已启动` |
+| `httpx.HTTPStatusError` (from `raise_for_status()`) | `语音合成服务返回错误，请稍后再试` |
+
+The upstream response body is **never** forwarded — only the fixed mapped string.
+
+---
+
 ## Domain Exceptions (`app/errors.py`)
 
 Define a small hierarchy and one mapping function. Routes/services raise/catch

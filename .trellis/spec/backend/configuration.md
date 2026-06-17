@@ -13,9 +13,13 @@
 | `OPENAI_API_KEY` | Auth for the OpenAI-compatible endpoint | Secret. Backend-only. Never logged or returned. |
 | `OPENAI_BASE_URL` | Base URL of the OpenAI-compatible API | e.g. an official or proxy gateway. |
 | `OPENAI_MODEL` | Model name to call | **Must support image input** — the request always carries a screenshot. |
+| `GPT_SOVITS_REF_AUDIO_PATH` | Path to the **Japanese** reference clip, resolvable **by the GPT-SoVITS process** (not necessarily inside this repo) | Voice timbre source for `/api/tts`. Never logged or returned. |
+| `GPT_SOVITS_PROMPT_TEXT` | The **Japanese transcript** of the reference clip | Must match the reference audio. Never logged or returned. |
 
-All three are **required**. There is no default and no mock fallback: a missing
-or empty value aborts startup (see "Fail-fast" below).
+All five are **required**. There is no default and no mock fallback: a missing
+or empty value aborts startup (see "Fail-fast" below). The two `GPT_SOVITS_*`
+required vars are validated even when the TTS service itself is down — the
+backend fails to boot without them, so fill `backend/.env` before starting.
 
 ### Optional Variables (have safe defaults)
 
@@ -25,6 +29,46 @@ or empty value aborts startup (see "Fail-fast" below).
 | `MAX_IMAGE_BYTES` | `2_000_000` | Reject oversized screenshots before calling the model. |
 | `REQUEST_TIMEOUT_SECONDS` | `60` | Upstream call timeout. |
 | `CORS_ALLOW_ORIGINS` | `http://localhost:5173` | Vite dev origin(s). Comma-separated. Do not use `*`. |
+
+---
+
+## GPT-SoVITS TTS Integration
+
+`/api/tts` proxies a local **GPT-SoVITS `api_v2.py`** REST service (the `POST /tts`
+contract — `text_lang`/`prompt_lang`/`media_type=wav`/`streaming_mode=false`).
+Answers are Japanese, so both langs default to `ja`. Config splits into three
+groups, all optional with safe defaults except the two required vars above.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `GPT_SOVITS_BASE_URL` | `http://127.0.0.1:9880` | Where the `/tts` client connects. Use `base_url` + `client.post("/tts")` to avoid a `//tts` double slash. |
+| `GPT_SOVITS_PROMPT_LANG` / `GPT_SOVITS_TEXT_LANG` | `ja` | Reference + synthesis language. |
+| `GPT_SOVITS_TEXT_SPLIT_METHOD` | `cut0` | `cut0` = "no split"; the backend sends one whole answer per request. |
+| `GPT_SOVITS_TIMEOUT_SECONDS` | `60` | `/tts` call timeout (cold start + full-answer synth can be slow). Positive int. |
+
+**Audio post-filter** (applied to the returned WAV in `services/audio_filter.py`):
+`GPT_SOVITS_AUDIO_FILTER_ENABLED` (`true`), `GPT_SOVITS_NOISE_GATE_THRESHOLD_DB`
+(`-45`), `GPT_SOVITS_NOISE_GATE_ATTENUATION` (`0.2`), `GPT_SOVITS_HIGHPASS_HZ`
+(`70`), `GPT_SOVITS_LOWPASS_HZ` (`9000`). The four numeric ones are validated as
+finite floats.
+
+**Auto-start (the backend may manage a local `api_v2.py` subprocess).** When
+`GPT_SOVITS_AUTO_START=true`, startup probes `GPT_SOVITS_BASE_URL/openapi.json`;
+if unreachable it launches `api_v2.py` and, once ready, applies weights via
+`GET /set_gpt_weights` + `GET /set_sovits_weights`. See
+[directory-structure.md](./directory-structure.md) → `services/gpt_sovits_runtime.py`
+for the lifecycle. Keys: `GPT_SOVITS_ROOT_DIR`, `GPT_SOVITS_PYTHON_PATH`,
+`GPT_SOVITS_API_SCRIPT` (`api_v2.py`), `GPT_SOVITS_API_CONFIG`,
+`GPT_SOVITS_API_HOST` (`127.0.0.1`), `GPT_SOVITS_API_PORT` (`9880`),
+`GPT_SOVITS_STARTUP_TIMEOUT_SECONDS` (`120`), `GPT_SOVITS_PROBE_TIMEOUT_SECONDS`
+(`2`), `GPT_SOVITS_GPT_WEIGHTS_PATH`, `GPT_SOVITS_SOVITS_WEIGHTS_PATH`.
+
+> **Gotcha**: auto-start only manages the process when `GPT_SOVITS_BASE_URL`'s
+> host/port match `GPT_SOVITS_API_HOST`/`PORT` (it won't kill a process it didn't
+> spawn). Default `GPT_SOVITS_AUTO_START=false` — if the service is down the
+> backend still boots and `/api/tts` fails per-request (see
+> [error-handling.md](./error-handling.md)); the Japanese **text** answer is
+> unaffected and never falls back to a browser voice.
 
 ---
 
@@ -78,7 +122,8 @@ def validate_config() -> None:
         logging.getLogger("startup").critical("配置校验失败，服务无法启动")
         # Print missing/invalid field names (NOT values) to stderr in zh-CN.
         print("启动失败：缺少必填环境变量，请检查 .env "
-              "(需要 OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL)。",
+              "(需要 OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL / "
+              "GPT_SOVITS_REF_AUDIO_PATH / GPT_SOVITS_PROMPT_TEXT)。",
               file=sys.stderr)
         raise SystemExit(1) from exc
 ```
@@ -92,10 +137,12 @@ for how this differs from per-request errors.
 ## API Key Protection (hard rules)
 
 - The key lives in `.env` and `Settings` only. It is **never** put into a
-  response body, an SSE frame, a log line, or an error message.
+  response body, an SSE frame, a log line, or an error message. The same applies
+  to `GPT_SOVITS_REF_AUDIO_PATH` and `GPT_SOVITS_PROMPT_TEXT` (local paths /
+  reference transcript) — keep them out of logs and responses.
 - `.env` is gitignored; commit `.env.example` with placeholder values instead.
 - The frontend never receives the key, base URL, or model name — it only talks
-  to `/api/chat`.
+  to `/api/chat` and `/api/tts`.
 
 ---
 

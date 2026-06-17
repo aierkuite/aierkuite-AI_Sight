@@ -37,9 +37,9 @@ frontend/
     │   ├── AnswerView/       # streamed model answer (aria-live)
     │   ├── ConversationList/ # last rounds, newest first
     │   └── ErrorBanner/      # permission/unsupported/request errors (role="alert")
-    ├── hooks/               # useCamera, useSpeechRecognition, useSpeechSynthesis, useChatStream
+    ├── hooks/               # useCamera, useSpeechRecognition, useVoicePlayback, useChatStream
     ├── effects/             # isolated dynamic visuals (e.g. particle background) — see below
-    ├── lib/                 # chatStream.ts (fetch + SSE parse), constants.ts
+    ├── lib/                 # chatStream.ts (fetch + SSE parse), sentences.ts, ttsClient.ts, constants.ts
     ├── types/               # chat.ts (shared shapes) + speech.d.ts (Web Speech ambient decls)
     └── styles/              # tokens.css (CSS custom properties), global.css
 ```
@@ -165,7 +165,7 @@ decorative layer and obeys the same purity + cleanup rules:
 - **Decouple from TTS via `stage`, not by reading TTS**: the drone plays only
   while `stage === "intro" && soundOn`, and fades out on entering `workspace`.
   Because TTS only speaks in the workspace, the two never overlap — so the audio
-  module **never imports `useSpeechSynthesis` or any chat/device state** (that
+  module **never imports `useVoicePlayback` or any chat/device state** (that
   would break the decorative-layer purity rule).
 - **Cleanup is mandatory**: on unmount, `dispose()` ramps gain to 0, `stop()`s
   the oscillators, and `close()`s the `AudioContext` — no lingering nodes or

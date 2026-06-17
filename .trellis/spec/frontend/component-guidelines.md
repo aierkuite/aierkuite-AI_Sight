@@ -11,7 +11,7 @@
 - **Function components only**, typed with an explicit props interface.
 - One component per folder: `Name/Name.tsx` + `Name/Name.module.css`.
 - Data in via props, intent out via callbacks. A component does **not** call
-  `getUserMedia`, `fetch`, or `speechSynthesis` directly — those come from hooks
+  `getUserMedia`, `fetch`, or `new Audio()` directly — those come from hooks
   owned higher up (see [hook-guidelines.md](./hook-guidelines.md)).
 
 ```tsx

@@ -1,7 +1,7 @@
 # Hook Guidelines
 
 > Custom hooks own every interaction with a browser device or API: camera,
-> speech recognition, speech synthesis, and the streaming chat request. Each hook
+> speech recognition, voice playback, and the streaming chat request. Each hook
 > encapsulates setup, a typed return, **feature detection**, and **cleanup on
 > unmount**. Components stay presentational.
 
@@ -13,7 +13,7 @@
 |------|-------|-----------------|
 | `useCamera` | `navigator.mediaDevices.getUserMedia` + a canvas | `{ videoRef, ready, error, captureFrame() }` |
 | `useSpeechRecognition` | `SpeechRecognition` / `webkitSpeechRecognition` | `{ supported, listening, transcript, start(), stop(), error }` |
-| `useSpeechSynthesis` | `window.speechSynthesis` | `{ supported, speaking, speak(text), cancel() }` |
+| `useVoicePlayback` | `fetch POST /api/tts` + `HTMLAudioElement` | `{ supported, speaking, error, speak(chunk), flush(), speakAll(text, onAudioReady?), cancel() }` |
 | `useChatStream` | `fetch` POST + SSE stream reader | `{ isStreaming, answer, error, send(req), abort() }` |
 
 ---
@@ -49,12 +49,29 @@
 - `start()`/`stop()` map to push-to-talk; expose `listening`.
 - Cleanup: call `recognition.abort()` on unmount; guard the unsupported case.
 
-## `useSpeechSynthesis`
+## `useVoicePlayback`
 
-- `speak(text)` enqueues an utterance; support **early/incremental playback** —
-  speak buffered sentence chunks as deltas arrive rather than waiting for the full
-  answer, to cut perceived latency.
-- `cancel()` clears the queue on a new question and on unmount.
+Plays back the answer as **server-synthesized audio** from `/api/tts` (local
+GPT-SoVITS), not the browser `speechSynthesis`. `supported` is
+`typeof window.Audio !== "undefined"`. Two playback modes share one
+`HTMLAudioElement`:
+
+- **`speakAll(text, onAudioReady?)` — current UX (wait-then-play).** Synthesize
+  the **whole** answer into one WAV, then play it. Crucially, `onAudioReady` fires
+  **only after** the audio Blob has arrived — `App.tsx` uses it to reveal the full
+  Japanese answer at the same moment playback starts, so the user never sees a
+  half-streamed answer with no voice. Resolve/return early (no error) if a newer
+  call or `cancel()` aborted this one.
+- **`speak(chunk)` / `flush()` — sentence-queue fallback (kept, not the default
+  path).** Buffer deltas, cut sentences with `takeSpeakableParts`, prefetch up to
+  `MAX_PREFETCH` (2) WAVs and play them in order. Available for an early-playback
+  experience but the app currently calls `speakAll`.
+
+- `error` is hook state (not a throw): a real `TtsError`/playback failure sets it;
+  `cancel()` clears it. **Distinguish `AbortError`** (from `cancel()` / a new round)
+  and never surface it as an error — mirror `useChatStream`'s `isAbortError`.
+- Cleanup: `cancel()` aborts the in-flight fetch(es), pauses audio, revokes object
+  URLs, and clears the queue — called on a new question and on unmount.
 
 ## `useChatStream`
 
@@ -78,8 +95,12 @@ async function send(req: ChatRequest) {
 
 - Parse frames into the `ChatEvent` discriminated union from
   [type-safety.md](./type-safety.md); branch on `delta` / `done` / `error`.
-- `abort()` cancels the in-flight stream; also abort in the unmount cleanup.
-- Feed deltas to both `AnswerView` and `useSpeechSynthesis.speak`.
+- `abort()` cancels the in-flight stream; also abort in the unmount cleanup. The
+  "stop" button and each new round call **both** `chat.abort()` and
+  `speaker.cancel()` so a finished request can't reveal a stale answer.
+- The full answer text is collected from the stream; once complete, `App.tsx`
+  calls `speaker.speakAll(answer, revealAnswer)` — the answer is revealed when the
+  audio is ready, not per-delta (wait-then-play, see `useVoicePlayback`).
 
 ---
 
