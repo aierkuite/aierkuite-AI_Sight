@@ -110,3 +110,38 @@ Trellis Phase 3 wrap-up. Re-ran all gates: caught one non-hermetic config test (
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: GPT-SoVITS 日文语音迁移 Phase 3 收尾
+
+**Date**: 2026-06-18
+**Task**: GPT-SoVITS 日文语音迁移 Phase 3 收尾
+**Branch**: `main`
+
+### Summary
+
+Phase 3.1 质量门禁全绿（后端 ruff format/check + 23 pytest，用 artical_longer 环境；前端 lint + 20 test + build）。Phase 3.3 更新 .trellis/spec：后端 configuration/error-handling/directory-structure/index 补 GPT-SoVITS TTS、/api/tts 502 契约、httpx→AppError、auto-start 子进程；前端 hook/index/directory/component 把已删除的 useSpeechSynthesis 改为 useVoicePlayback 的 speakAll 等待式整段播放。Phase 3.4 三次提交（feat 代码 / docs spec+gitignore / chore 归档子任务），plan.md 按用户要求不提交，logs 与 plan-custom-voice.md 加入 gitignore。归档当前任务与 superseded 的 fish-tts-voice。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0995d88` | (see git log) |
+| `18384ae` | (see git log) |
+| `4d6f50c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
