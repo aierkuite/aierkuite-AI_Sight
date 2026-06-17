@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/configuration.md", "reason": "新增 Fish 配置字段须沿用 strip/positive-int 验证器与 fail-fast 风格"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "tts 错误形状与 to_user_message 安全映射须与 chat 一致，不泄露 Key"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "routes/services/schemas 分层放置约定"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "tts 路由失败日志须用 error_type，不打印原始异常/Key"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useVoicePlayback hook 的 ref/useCallback/清理约定"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "ttsClient/hook 的类型与无 any 约束"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "lib/sentences.ts、lib/ttsClient.ts、hooks 放置约定"}
+{"file": ".trellis/tasks/06-17-fish-tts-voice/research/fish-audio-sdk-api.md", "reason": "SDK 真实 API + 计划修正点（close() 非 aclose() 等）"}

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端 ruff + pytest 质量门禁基线"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "校验错误不泄露 Key/原始错误/内部路径"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端 lint + test + build 质量门禁基线"}
+{"file": ".trellis/tasks/06-17-fish-tts-voice/research/fish-audio-sdk-api.md", "reason": "核对实现是否应用了 SDK 修正点"}

@@ -1,0 +1,31 @@
+{
+  "id": "fish-tts-voice",
+  "name": "fish-tts-voice",
+  "title": "用 Fish Audio TTS 替换浏览器播报音色",
+  "description": "",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "aierkuite",
+  "assignee": "aierkuite",
+  "createdAt": "2026-06-17",
+  "completedAt": "2026-06-18",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "2026-06-17：该任务已停止，Fish Audio 方案因后端语音合成不可用且需求改为 GPT-SoVITS 播报而被取代。不要继续提交 Fish Audio 实现；新方案应另建 GPT-SoVITS 任务重新走 Phase 1。",
+  "meta": {
+    "supersededAt": "2026-06-17",
+    "supersededBy": "GPT-SoVITS backend TTS task",
+    "supersededReason": "用户已决定将后端播报声音从 Fish Audio 改为 GPT-SoVITS，当前 Fish Audio 任务不再作为完成目标",
+    "runtimeFinding": "Fish Audio API 诊断返回 HTTP 402 insufficient credit"
+  }
+}
