@@ -2,6 +2,7 @@ import type { HistoryTurn } from "../types/chat";
 
 export const MAX_HISTORY_ROUNDS = 6;
 export const CHAT_ENDPOINT = "/api/chat";
+export const TTS_ENDPOINT = "/api/tts";
 
 /**
  * 作用：裁剪历史消息到最近 6 轮纯文本

@@ -15,7 +15,7 @@ import type { HistoryTurn } from "./types/chat";
 import { useCamera } from "./hooks/useCamera";
 import { useChatStream } from "./hooks/useChatStream";
 import { useSpeechRecognition } from "./hooks/useSpeechRecognition";
-import { useSpeechSynthesis } from "./hooks/useSpeechSynthesis";
+import { useVoicePlayback } from "./hooks/useVoicePlayback";
 import styles from "./App.module.css";
 
 /** 懒加载 3D 电影场景：three 栈较大，仅在 WebGL 可用时按需加载（plan §10） */
@@ -57,16 +57,19 @@ function detectSceneEnabled(): boolean {
 export function App() {
   const camera = useCamera();
   const speech = useSpeechRecognition();
-  const speaker = useSpeechSynthesis();
+  const speaker = useVoicePlayback();
   const chat = useChatStream();
   const [history, setHistory] = useState<HistoryTurn[]>([]);
   const [draftText, setDraftText] = useState("");
+  const [visibleAnswer, setVisibleAnswer] = useState("");
+  const [preparingVoice, setPreparingVoice] = useState(false);
   const [appError, setAppError] = useState<string | null>(null);
 
   const stage = useCinematicStore((state) => state.stage);
   const setStage = useCinematicStore((state) => state.setStage);
   const [sceneEnabled] = useState(detectSceneEnabled);
   const shellRef = useRef<HTMLElement>(null);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (speech.transcript) {
@@ -86,6 +89,7 @@ export function App() {
         camera.error,
         speech.error,
         chat.error,
+        speaker.error,
         !camera.supported && "当前浏览器不支持摄像头访问，请使用最新版 Chrome 或 Edge",
         !speech.supported && "当前浏览器不支持语音识别，请使用最新版 Chrome 或 Edge",
         !speaker.supported && "当前浏览器不支持语音播报，仍可查看文字回答",
@@ -95,13 +99,15 @@ export function App() {
       camera.error,
       camera.supported,
       chat.error,
+      speaker.error,
       speaker.supported,
       speech.error,
       speech.supported,
     ],
   );
 
-  const canSend = draftText.trim().length > 0 && camera.ready && !chat.isStreaming;
+  const busy = chat.isStreaming || preparingVoice || speaker.speaking;
+  const canSend = draftText.trim().length > 0 && camera.ready && !busy;
 
   /**
    * 作用：进入双栏工作台（CTA 与「跳过」共用）
@@ -118,7 +124,7 @@ export function App() {
    * 返回：无
    */
   function handleStartTalking(): void {
-    if (chat.isStreaming) {
+    if (busy) {
       return;
     }
     setAppError(null);
@@ -133,6 +139,18 @@ export function App() {
    */
   function handleStopTalking(): void {
     speech.stop();
+  }
+
+  /**
+   * 作用：同时停止流式回答和当前语音播报
+   * 参数：无
+   * 返回：无
+   */
+  function handleAbort(): void {
+    requestIdRef.current += 1;
+    setPreparingVoice(false);
+    chat.abort();
+    speaker.cancel();
   }
 
   /**
@@ -160,23 +178,53 @@ export function App() {
 
     setAppError(null);
     speaker.cancel();
+    setVisibleAnswer("");
+    setPreparingVoice(true);
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+    let answer = "";
+    let revealed = false;
 
-    try {
-      const answer = await chat.send(
-        {
-          text,
-          image,
-          history: trimHistory(history),
-        },
-        {
-          onDelta: speaker.speak,
-          onDone: speaker.flush,
-        },
-      );
+    /**
+     * 作用：在整段语音准备好后一次性显示回答并写入历史
+     * 参数：无
+     * 返回：无
+     */
+    const revealAnswer = (): void => {
+      if (revealed || requestIdRef.current !== requestId) {
+        return;
+      }
+      revealed = true;
+      setVisibleAnswer(answer);
+      setPreparingVoice(false);
       setHistory((current) => appendRound(current, text, answer));
       setDraftText("");
       speech.reset();
+    };
+
+    try {
+      answer = await chat.send({
+        text,
+        image,
+        history: trimHistory(history),
+      });
+      if (requestIdRef.current !== requestId) {
+        return;
+      }
+      if (!answer.trim()) {
+        setPreparingVoice(false);
+        return;
+      }
+      if (speaker.supported) {
+        await speaker.speakAll(answer, revealAnswer);
+      } else {
+        revealAnswer();
+      }
     } catch (error) {
+      setPreparingVoice(false);
+      if (answer.trim()) {
+        revealAnswer();
+      }
       if (error instanceof Error) {
         setAppError(error.message);
       } else {
@@ -211,15 +259,15 @@ export function App() {
             <form className={styles.controls} onSubmit={(event) => void handleSubmit(event)}>
               <TalkButton
                 listening={speech.listening}
-                disabled={chat.isStreaming || !speech.supported}
+                disabled={busy || !speech.supported}
                 onStart={handleStartTalking}
                 onStop={handleStopTalking}
               />
               <button className={styles.sendButton} type="submit" disabled={!canSend}>
                 发送问题
               </button>
-              {chat.isStreaming ? (
-                <button className={styles.secondaryButton} type="button" onClick={chat.abort}>
+              {busy ? (
+                <button className={styles.secondaryButton} type="button" onClick={handleAbort}>
                   停止回答
                 </button>
               ) : null}
@@ -227,12 +275,17 @@ export function App() {
             <TranscriptView
               value={draftText}
               listening={speech.listening}
-              disabled={chat.isStreaming}
+              disabled={busy}
               onChange={setDraftText}
             />
           </div>
           <div className={styles.rightPane}>
-            <AnswerView answer={chat.answer} streaming={chat.isStreaming} speaking={speaker.speaking} />
+            <AnswerView
+              answer={visibleAnswer}
+              streaming={chat.isStreaming}
+              preparing={preparingVoice && !chat.isStreaming && !visibleAnswer}
+              speaking={speaker.speaking}
+            />
             <ConversationList history={history} />
           </div>
         </section>

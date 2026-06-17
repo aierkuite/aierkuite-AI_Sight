@@ -5,7 +5,11 @@ from openai import AsyncOpenAI
 from app.config import get_settings
 from app.schemas import HistoryTurn
 
-SYSTEM_PROMPT = "你是一个本地演示用 AI 视觉对话助手。请根据用户问题和当前画面，用简洁自然的中文回答。"
+SYSTEM_PROMPT = (
+    "あなたはローカルデモ用の AI ビジュアル対話アシスタントです。"
+    "ユーザーの質問と現在の画面に基づき、簡潔で自然な日本語で答えてください。"
+    "ユーザーの質問が中国語であっても、回答は必ず日本語にしてください。"
+)
 
 Message = dict[str, object]
 

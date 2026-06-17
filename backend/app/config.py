@@ -1,3 +1,4 @@
+import math
 from functools import lru_cache
 
 from pydantic import Field, field_validator
@@ -12,6 +13,32 @@ class Settings(BaseSettings):
     openai_api_key: str = Field(min_length=1)
     openai_base_url: str = Field(min_length=1)
     openai_model: str = Field(min_length=1)
+    gpt_sovits_base_url: str = Field(
+        default="http://127.0.0.1:9880",
+        min_length=1,
+    )
+    gpt_sovits_ref_audio_path: str = Field(min_length=1)
+    gpt_sovits_prompt_text: str = Field(min_length=1)
+    gpt_sovits_prompt_lang: str = "ja"
+    gpt_sovits_text_lang: str = "ja"
+    gpt_sovits_text_split_method: str = "cut0"
+    gpt_sovits_timeout_seconds: int = 60
+    gpt_sovits_audio_filter_enabled: bool = True
+    gpt_sovits_noise_gate_threshold_db: float = -45.0
+    gpt_sovits_noise_gate_attenuation: float = 0.2
+    gpt_sovits_highpass_hz: float = 70.0
+    gpt_sovits_lowpass_hz: float = 9000.0
+    gpt_sovits_auto_start: bool = False
+    gpt_sovits_root_dir: str = ""
+    gpt_sovits_python_path: str = ""
+    gpt_sovits_api_script: str = "api_v2.py"
+    gpt_sovits_api_config: str = "GPT_SoVITS/configs/tts_infer.yaml"
+    gpt_sovits_api_host: str = "127.0.0.1"
+    gpt_sovits_api_port: int = 9880
+    gpt_sovits_startup_timeout_seconds: int = 120
+    gpt_sovits_probe_timeout_seconds: int = 2
+    gpt_sovits_gpt_weights_path: str = ""
+    gpt_sovits_sovits_weights_path: str = ""
     max_history_rounds: int = 6
     max_image_bytes: int = 2_000_000
     request_timeout_seconds: int = 60
@@ -22,6 +49,15 @@ class Settings(BaseSettings):
         "openai_api_key",
         "openai_base_url",
         "openai_model",
+        "gpt_sovits_base_url",
+        "gpt_sovits_ref_audio_path",
+        "gpt_sovits_prompt_text",
+        "gpt_sovits_prompt_lang",
+        "gpt_sovits_text_lang",
+        "gpt_sovits_text_split_method",
+        "gpt_sovits_api_script",
+        "gpt_sovits_api_config",
+        "gpt_sovits_api_host",
         "cors_allow_origins",
         "log_level",
     )
@@ -40,7 +76,15 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         return stripped
 
-    @field_validator("max_history_rounds", "max_image_bytes", "request_timeout_seconds")
+    @field_validator(
+        "max_history_rounds",
+        "max_image_bytes",
+        "request_timeout_seconds",
+        "gpt_sovits_timeout_seconds",
+        "gpt_sovits_api_port",
+        "gpt_sovits_startup_timeout_seconds",
+        "gpt_sovits_probe_timeout_seconds",
+    )
     @classmethod
     def require_positive_int(cls, value: int) -> int:
         """校验数值配置必须为正整数
@@ -52,6 +96,26 @@ class Settings(BaseSettings):
         """
         if value <= 0:
             msg = "配置值必须大于 0"
+            raise ValueError(msg)
+        return value
+
+    @field_validator(
+        "gpt_sovits_noise_gate_threshold_db",
+        "gpt_sovits_noise_gate_attenuation",
+        "gpt_sovits_highpass_hz",
+        "gpt_sovits_lowpass_hz",
+    )
+    @classmethod
+    def require_audio_filter_number(cls, value: float) -> float:
+        """校验音频过滤数值配置必须非负或处于合理范围
+
+        参数:
+            value: 环境变量解析后的浮点数值
+        返回:
+            通过校验的音频过滤参数
+        """
+        if not math.isfinite(value):
+            msg = "音频过滤配置必须是有限数值"
             raise ValueError(msg)
         return value
 

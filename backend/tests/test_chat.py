@@ -43,6 +43,8 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-secret")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://example.test/v1")
     monkeypatch.setenv("OPENAI_MODEL", "vision-model")
+    monkeypatch.setenv("GPT_SOVITS_REF_AUDIO_PATH", "ref.wav")
+    monkeypatch.setenv("GPT_SOVITS_PROMPT_TEXT", "こんにちは")
     get_settings.cache_clear()
     with TestClient(create_app()) as test_client:
         yield test_client
@@ -186,6 +188,19 @@ def test_build_messages_trims_history_and_attaches_current_image_only() -> None:
     assert historical_images == []
 
 
+def test_build_messages_requires_japanese_answer() -> None:
+    """验证系统提示强制模型使用日文回答
+
+    参数:
+        无
+    返回:
+        无
+    """
+    messages = build_messages("请描述画面", None, [], max_history_rounds=6)
+
+    assert "日本語" in str(messages[0]["content"])
+
+
 def test_stream_chat_reads_async_openai_deltas(monkeypatch: pytest.MonkeyPatch) -> None:
     """验证服务层能读取 AsyncOpenAI 风格的流式 delta
 
@@ -227,6 +242,8 @@ def test_stream_chat_reads_async_openai_deltas(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test-secret")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://example.test/v1")
     monkeypatch.setenv("OPENAI_MODEL", "vision-model")
+    monkeypatch.setenv("GPT_SOVITS_REF_AUDIO_PATH", "ref.wav")
+    monkeypatch.setenv("GPT_SOVITS_PROMPT_TEXT", "こんにちは")
     get_settings.cache_clear()
     monkeypatch.setattr(llm, "get_client", lambda: fake_client)
 

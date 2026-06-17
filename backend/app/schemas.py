@@ -71,6 +71,30 @@ class ChatRequest(BaseModel):
         return stripped or None
 
 
+class TtsRequest(BaseModel):
+    """定义 /api/tts 的请求体"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("text")
+    @classmethod
+    def strip_text(cls, value: str) -> str:
+        """清理播报文本并拒绝空文本
+
+        参数:
+            value: 前端提交的原始播报文本
+        返回:
+            去除首尾空白后的播报文本
+        """
+        stripped = value.strip()
+        if not stripped:
+            msg = "播报文本不能为空"
+            raise ValueError(msg)
+        return stripped
+
+
 class DeltaEvent(BaseModel):
     """定义默认 SSE token 事件数据"""
 
