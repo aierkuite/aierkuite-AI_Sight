@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端质量门禁基线：ruff check . / ruff format --check . / pytest；conftest .env 隔离与 config 测试 gotcha；卸载 fish-audio-sdk 后须无 import fishaudio"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "复核 tts 失败仅返回安全中文，不泄露 Key/上游响应体/内部路径；AppError→str(exc) 透传链路正确"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "复核 /api/tts 失败日志只记 error_type/exc_info，不打印参考音频路径或转写文本"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量门禁基线：lint + test + build 全绿；确认仅注释/mime 改动未破坏既有播放/取消/限流测试"}

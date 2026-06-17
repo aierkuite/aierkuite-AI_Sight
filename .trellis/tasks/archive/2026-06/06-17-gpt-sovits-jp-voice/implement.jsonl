@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/configuration.md", "reason": "替换 Fish→GPT_SOVITS 配置字段须沿用 strip_non_empty / require_positive_int 验证器与 fail-fast、get_settings() 单一来源风格"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "tts 错误形状与 to_user_message 安全映射须与 chat 一致；服务层 httpx 异常映射成中文 AppError，不泄露上游响应体/路径/Key"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "thin routes / fat services 分层：异常映射放 services/tts.py，路由只 validate→call→return；命名约定"}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "/api/tts 失败日志须用 error_type + exc_info，不打印原始异常/参考路径/转写文本"}
+{"file": ".trellis/spec/backend/llm-streaming.md", "reason": "SYSTEM_PROMPT 须保持在 llm.py 单一位置；build_messages/stream_chat 契约不可破坏（仅改提示常量）"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "改测试须遵循 pytest 模式与 conftest .env 隔离 gotcha；ruff check/format 基线；类型注解必备"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端注释/mime 字符串清理后仍须过 lint/test/build；AbortError 视为正常取消的既有约定不破坏"}
