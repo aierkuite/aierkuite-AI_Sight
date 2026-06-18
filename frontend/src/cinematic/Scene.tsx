@@ -19,9 +19,12 @@ interface Palette {
 type Quality = "mobile" | "desktop";
 
 /** 各档参数（移动端降画质，桌面满档） */
-const QUALITY_PRESET: Record<Quality, { particles: number; bloom: number; dpr: [number, number] }> = {
-  mobile: { particles: 9000, bloom: 0.8, dpr: [1, 1.5] },
-  desktop: { particles: 28000, bloom: 1.5, dpr: [1, 2] },
+const QUALITY_PRESET: Record<
+  Quality,
+  { particles: number; bloom: number; dpr: [number, number]; multisampling: number }
+> = {
+  mobile: { particles: 9000, bloom: 0.8, dpr: [1, 1.5], multisampling: 2 },
+  desktop: { particles: 28000, bloom: 1.5, dpr: [1, 2], multisampling: 2 },
 };
 
 /**
@@ -193,7 +196,9 @@ function SceneContents({ palette, quality }: { palette: Palette; quality: Qualit
         count={preset.particles}
       />
 
-      <EffectComposer>
+      {/* multisampling：未传时该库默认 8，叠加 HalfFloat RT 是翻页期最重的填充/带宽成本。
+          降到 2 即砍掉大部分 MSAA 解析开销，软粒子 + Bloom 下肉眼几乎无差（实测翻页最低 fps 翻倍）。 */}
+      <EffectComposer multisampling={preset.multisampling}>
         {/* Bloom 强度保持静态：后幕「辉光递减」由粒子减量(uVisible/uOpacity)+渐浓雾自然实现
             ——亮源变少变暗 → Bloom 贡献随之收敛，无需逐帧改 effect 强度（避开该库 ref 的类型缺陷）。
             移动档进一步弱化 Bloom（preset.bloom）以省 GPU。 */}
@@ -222,7 +227,9 @@ export default function Scene() {
   return (
     <Canvas
       dpr={QUALITY_PRESET[quality].dpr}
-      gl={{ antialias: true }}
+      // 经 EffectComposer 渲染时场景画到 composer 的 RT，默认帧缓冲的 MSAA 不参与最终合成；
+      // antialias:true 只会白白多分配一个多重采样画布。抗锯齿交给 composer 的 multisampling。
+      gl={{ antialias: false }}
       camera={{ position: [0, 0, 9], fov: 42 }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
