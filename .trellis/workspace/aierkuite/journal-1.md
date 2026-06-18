@@ -145,3 +145,36 @@ Phase 3.1 质量门禁全绿（后端 ruff format/check + 23 pytest，用 artica
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: 落地页开场改离散整屏翻页 + 末页两段式掭起
+
+**Date**: 2026-06-18
+**Task**: 落地页开场改离散整屏翻页 + 末页两段式掭起
+**Branch**: `main`
+
+### Summary
+
+CinematicLanding 从 Lenis 连续滚动(380vh)改为离散整屏翻页5页(锚点[0,.32,.52,.7,1]): 滚轮/键盘/触摸一次手势一页(动画锁+静默再武装120ms), rAF补间绕开全局reduced-motion。末页两段式掭起: 工作台从屏幕底部升起露~20%偏暗→升满转亮进入(揭示方向/幅度按用户现场反馈定稿), store加peek/setPeek。移除lenis、删useLenisScroll、同步spec(Lenis→usePagedScroll+peek)。lint/build/test(20)全绿+独立check子代理1-6全PASS。环境坑: trellis channel spawn在Windows失败(spawn claude ENOENT), 改用原生trellis-check子代理。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f9c86ca` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
