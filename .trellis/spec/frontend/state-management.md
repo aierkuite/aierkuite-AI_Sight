@@ -59,9 +59,10 @@ is the **one** place a store is allowed, and only for **decorative state**:
 // store/cinematic.ts — decorative ONLY
 interface CinematicState {
   stage: "intro" | "workspace";
-  scrollProgress: number; // 0→1, written every rAF by Lenis
+  scrollProgress: number; // 0→1, written every rAF by usePagedScroll (paged-scroll tween)
+  peek: number;           // 0→1, last-page lift: drives landing fade-out + workspace shell rise
   soundOn: boolean;
-  // + setStage / setScrollProgress / setSoundOn / toggleSound / replayIntro
+  // + setStage / setScrollProgress / setPeek / setSoundOn / toggleSound / replayIntro
 }
 ```
 

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端整体约定与 Non-Negotiables（hook 卸载清理、CSS Modules、zh-CN 文案）"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "usePagedScroll 新增 window 监听 + rAF + timer，必须对照 hook 生命周期/卸载清理约定核查（监听移除、cancelAnimationFrame、clearTimeout）"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "CinematicLanding/App 改动需符合函数组件、typed props、CSS Modules、effects 隔离层约定"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "ESLint/Prettier/Vitest 的 forbidden & required 模式，核查改动是否触犯"}

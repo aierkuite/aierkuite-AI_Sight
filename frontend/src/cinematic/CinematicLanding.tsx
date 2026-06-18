@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { useCinematicStore } from "../store/cinematic";
 import { SoundToggle } from "./SoundToggle";
-import { useLenisScroll } from "./useLenisScroll";
+import { usePagedScroll } from "./usePagedScroll";
 import styles from "./CinematicLanding.module.css";
 
 interface CinematicLandingProps {
@@ -14,32 +14,38 @@ interface CinematicLandingProps {
 const CTA_ACTIVE_FROM = 0.8;
 
 /**
- * 作用：电影开场滚动长卷（~380vh）——三幕文字叠层按 scrollProgress 区间 crossfade + 轻位移，
- *   始终可见可点的角标（logo + 跳过）。Act1 Hero / Act2 三拍能力 / Act3 CTA。
- *   滚动进度由 useLenisScroll 写进 store；此处透明订阅 store 把进度写成 CSS 变量 --sp，
- *   交给 CSS 用 clamp/min 做区间映射（不触发 React 重渲染），并按阈值开关 CTA 的 pointer-events。
+ * 作用：电影开场离散整屏翻页（5 页：Hero / 看得见 / 听得懂 / 边想边答 / CTA）——三幕文字叠层按
+ *   scrollProgress 区间 crossfade + 轻位移，始终可见可点的角标（logo + 跳过）。
+ *   翻页由 usePagedScroll 接管滚轮/键盘/触摸（一次手势一页），rAF 补间写进 store；此处透明订阅 store
+ *   把 scrollProgress / peek 写成 CSS 变量 --sp / --peek（不触发 React 重渲染）——--sp 驱动三幕区间映射，
+ *   --peek 驱动 .root 末页整体淡出退场（让位给 App 里从屏幕底部升起的工作台 shell）；并按阈值开关 CTA 的 pointer-events。
  *   纯叠层：容器 pointer-events:none，仅交互元素 auto；颜色全部走 CSS 令牌。
  * 参数：onEnter 进入工作台回调
- * 返回：撑出文档可滚高度的滚动长卷
+ * 返回：满视口的离散翻页开场叠层
  */
 export function CinematicLanding({ onEnter }: CinematicLandingProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
 
-  // Lenis 平滑滚动（reduced-motion 时退化为原生滚动）→ store.scrollProgress
-  useLenisScroll();
+  // 离散整屏翻页（滚轮/键盘/触摸一次手势一页；末页两段式掭起 → onEnter）→ store.scrollProgress / peek
+  usePagedScroll(onEnter);
 
-  // 透明订阅 store：把进度写成 CSS 变量 --sp 驱动三幕区间 crossfade，并按阈值门控 CTA 点击
+  // 透明订阅 store：把 scrollProgress / peek 写成 CSS 变量 --sp / --peek，并按阈值门控 CTA 点击
   useEffect(() => {
-    const apply = (p: number): void => {
-      rootRef.current?.style.setProperty("--sp", p.toFixed(4));
+    const apply = (): void => {
+      const { scrollProgress, peek } = useCinematicStore.getState();
+      const root = rootRef.current;
+      if (root !== null) {
+        root.style.setProperty("--sp", scrollProgress.toFixed(4));
+        root.style.setProperty("--peek", peek.toFixed(4));
+      }
       const cta = ctaRef.current;
       if (cta !== null) {
-        cta.style.pointerEvents = p >= CTA_ACTIVE_FROM ? "auto" : "none";
+        cta.style.pointerEvents = scrollProgress >= CTA_ACTIVE_FROM ? "auto" : "none";
       }
     };
-    apply(useCinematicStore.getState().scrollProgress);
-    return useCinematicStore.subscribe((state) => apply(state.scrollProgress));
+    apply();
+    return useCinematicStore.subscribe(apply);
   }, []);
 
   return (

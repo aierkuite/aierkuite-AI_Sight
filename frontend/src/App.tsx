@@ -1,4 +1,4 @@
-import { type FormEvent, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { AnswerView } from "./components/AnswerView/AnswerView";
 import { AppHeader } from "./components/AppHeader/AppHeader";
@@ -82,6 +82,34 @@ export function App() {
     shellRef.current?.toggleAttribute("inert", stage === "intro");
   }, [stage]);
 
+  // 末页两段式「掭起」期间，逐帧把工作台 shell 的 opacity 按 peek 抬起（露出工作台顶部一角）；
+  // 其余时刻清空内联样式，交还给 .shell / .shellHidden 的类规则（保证「跳过」常规进入的 1.4s 淡入照常生效）。
+  useEffect(() => {
+    const apply = (): void => {
+      const { peek, stage: currentStage } = useCinematicStore.getState();
+      const el = shellRef.current;
+      if (el === null) {
+        return;
+      }
+      if (currentStage === "intro" && peek > 0) {
+        // ⚠️ .shell 有 transition: opacity 1.4s（--dur-cinematic）。逐帧改 opacity/transform 会被它拖成「涂抹」，
+        //    揭示跟不上掭动；故 peek 期间临时关掉过渡、直驱。
+        el.style.transition = "none";
+        // 工作台从屏幕底部升起：peek 即露出比例（PEEK_STOP=0.2 → 露出 20%），未露出部分被压到视口下方
+        el.style.transform = `translateY(${((1 - peek) * 100).toFixed(2)}%)`;
+        // 预览态偏暗，第二段提交时渐亮到全亮
+        el.style.opacity = (0.3 + 0.7 * peek).toFixed(3);
+      } else {
+        // 静止 / 进入工作台：清空内联样式，交还给 .shellHidden(opacity:0) 或 .shell(opacity:1，含 1.4s 淡入)
+        el.style.opacity = "";
+        el.style.transition = "";
+        el.style.transform = "";
+      }
+    };
+    apply();
+    return useCinematicStore.subscribe(apply);
+  }, []);
+
   const errors = useMemo(
     () =>
       uniqueMessages([
@@ -110,13 +138,13 @@ export function App() {
   const canSend = draftText.trim().length > 0 && camera.ready && !busy;
 
   /**
-   * 作用：进入双栏工作台（CTA 与「跳过」共用）
+   * 作用：进入双栏工作台（CTA 与「跳过」共用）；用 useCallback 固定引用，避免向开场 hook 传入新回调
    * 参数：无
    * 返回：无
    */
-  function handleEnterWorkspace(): void {
+  const handleEnterWorkspace = useCallback((): void => {
     setStage("workspace");
-  }
+  }, [setStage]);
 
   /**
    * 作用：开始一次按住说话识别

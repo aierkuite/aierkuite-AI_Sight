@@ -1,12 +1,21 @@
-/* 滚动长卷：root 在常规流里撑出 ~380vh 文档高度，三幕叠层用 fixed 居中、按 --sp 区间 crossfade。
-   --sp（0→1）由 CinematicLanding 透明订阅 store 后写入；下方各幕用 clamp()/min() 做区间映射。 */
+/* 离散整屏翻页：root 钉满视口（fixed/inset:0），三幕叠层各自 fixed 居中、按 --sp 区间 crossfade。
+   --sp（0→1）/ --peek（0→1）由 CinematicLanding 透明订阅 store 后写入。
+   末页两段式掭起：落地页本身保持静止，第二段（peek 从 PEEK_STOP→1）整体淡出，让位给从底部升起的工作台（shell 在 App 里驱动）。 */
 .root {
   --sp: 0;
-  position: relative;
+  --peek: 0;
+  position: fixed;
+  inset: 0;
+  height: 100vh; /* 降级兜底（极老浏览器无 dvh） */
+  height: 100dvh; /* 移动端用动态视口高度：规避 100vh 含地址栏导致的溢出/原生滚动；height 覆盖 inset:0 的 bottom */
+  overflow: hidden;
+  overscroll-behavior: none; /* 阻断浏览器橡皮筋/前进后退手势 */
   z-index: var(--z-overlay);
-  min-height: 380vh;
   color: var(--color-text);
   pointer-events: none; /* 容器不吞点击，仅交互元素 pointer-events:auto */
+  /* 第二段掭起整体淡出：peek≤PEEK_STOP(0.2) 时为 1（预览阶段落地页仍在），peek→1 渐隐到 0（让位工作台）。0.8 = 1 - PEEK_STOP */
+  opacity: clamp(0, calc((1 - var(--peek)) / 0.8), 1);
+  will-change: opacity;
 }
 
 .chrome {
