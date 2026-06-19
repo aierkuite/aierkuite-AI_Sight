@@ -12,7 +12,7 @@ interface Feature {
 const FEATURES: Feature[] = [
   { title: "视觉问答", desc: "每次提问截取当前摄像头帧一并发送，模型基于画面作答。" },
   { title: "语音输入", desc: "「按住说话」实时转写中文，也支持直接输入文字。" },
-  { title: "流式回答", desc: "后端通过 SSE 逐 token 推送，回答边生成边出现。" },
+  { title: "流式生成", desc: "后端 SSE 逐 token 流式生成，语音就绪后整段呈现。" },
   { title: "日语克隆语音", desc: "回答经 GPT-SoVITS 合成克隆音色日语，字音同步播报。" },
   { title: "电影化开场", desc: "Three.js 5 页整屏翻页开场，末页两段式掭起进入工作台。" },
   { title: "优雅降级", desc: "无 WebGL 回退 2D 背景；设备能力不足时给出明确中文提示。" },
